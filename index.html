@@ -1,842 +1,2412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sai Eternal Foundation | Pipe Data Management</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sai Eternal Foundation – Pipe Data Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <style>
-        :root {
-            --primary: #3b82f6;
-            --secondary: #10b981;
-            --bg-dark: #0f172a;
-            --glass: rgba(30, 41, 59, 0.7);
-        }
+  <!-- ═══════════════════════════════════════════════════════════
+       FIREBASE CONFIG — Replace with your own Firebase project
+       Go to: https://console.firebase.google.com
+       ═══════════════════════════════════════════════════════════ -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBVaw3LyYFFUzi8ZGwry_Rv324e2tWvsBI",
+    authDomain: "saipipemanagement.firebaseapp.com",
+    projectId: "saipipemanagement",
+    storageBucket: "saipipemanagement.appspot.com",
+    messagingSenderId: "796731343543",
+    appId: "1:796731343543:web:d0e18e6b2084c5112b8332"
+  };
+    firebase.initializeApp(firebaseConfig);
+  </script> -->
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 20%),
-                              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 20%);
-            color: white;
-            overflow-x: hidden;
-        }
+<style>
+/* ====================== RESET & BASE ====================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07091a;
+  --bg2:#0c1023;
+  --surface:#111827;
+  --surface2:#1a2235;
+  --card:#16203a;
+  --card2:#1c2b47;
+  --border:#253050;
+  --border2:#2e3d62;
+  --primary:#00d4aa;
+  --primary-dim:#00a882;
+  --primary-glow:rgba(0,212,170,0.18);
+  --accent:#f5a623;
+  --accent-dim:#c8841a;
+  --accent-glow:rgba(245,166,35,0.15);
+  --danger:#ff4d6d;
+  --danger-dim:#cc3a56;
+  --success:#22c55e;
+  --warning:#eab308;
+  --info:#3b82f6;
+  --txt:#dde4f0;
+  --txt2:#8a9bc0;
+  --txt3:#5a6b8a;
+  --white:#ffffff;
+  --sidebar-w:260px;
+  --header-h:62px;
+  --radius:10px;
+  --radius-lg:16px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.6);
+  --trans:all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--txt3)}
 
-        /* Glassmorphism */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+/* ====================== LOGIN SCREEN ====================== */
+#loginScreen{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0,212,170,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 80% 80%, rgba(245,166,35,0.05) 0%, transparent 60%);
+}
+.login-wrap{
+  width:100%;max-width:420px;
+  padding:20px;
+}
+.login-brand{
+  text-align:center;
+  margin-bottom:36px;
+}
+.login-brand .logo-icon{
+  width:70px;height:70px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dim));
+  border-radius:18px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:30px;color:#000;
+  margin-bottom:16px;
+  box-shadow:0 0 40px var(--primary-glow);
+}
+.login-brand h1{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px;font-weight:700;
+  letter-spacing:0.5px;
+  color:var(--white);
+  line-height:1.2;
+}
+.login-brand p{
+  font-size:12px;color:var(--txt2);
+  letter-spacing:1px;text-transform:uppercase;
+  margin-top:4px;
+}
+.login-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:32px;
+  box-shadow:var(--shadow-lg);
+}
+.login-card h2{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;font-weight:600;
+  margin-bottom:6px;color:var(--txt);
+}
+.login-card p{font-size:13px;color:var(--txt2);margin-bottom:28px}
+.form-group{margin-bottom:18px}
+.form-group label{
+  display:block;font-size:11px;
+  font-weight:600;letter-spacing:0.8px;
+  text-transform:uppercase;color:var(--txt2);
+  margin-bottom:7px;
+}
+.form-control{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:11px 14px;
+  font-size:14px;font-family:'Barlow',sans-serif;
+  color:var(--txt);
+  transition:var(--trans);
+  outline:none;
+}
+.form-control:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+.form-control::placeholder{color:var(--txt3)}
+.input-group{position:relative}
+.input-group .form-control{padding-right:44px}
+.input-group .toggle-pass{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--txt3);cursor:pointer;
+  padding:4px;font-size:15px;
+  transition:var(--trans);
+}
+.input-group .toggle-pass:hover{color:var(--txt)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;
+  border-radius:var(--radius);
+  font-family:'Barlow',sans-serif;
+  font-size:14px;font-weight:600;
+  cursor:pointer;border:none;
+  transition:var(--trans);
+  text-decoration:none;
+  white-space:nowrap;
+  letter-spacing:0.3px;
+}
+.btn:active{transform:scale(0.97)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dim));
+  color:#000;
+}
+.btn-primary:hover{background:linear-gradient(135deg,#00e8bb,var(--primary));box-shadow:0 4px 20px var(--primary-glow)}
+.btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent-dim));color:#000}
+.btn-accent:hover{box-shadow:0 4px 20px var(--accent-glow)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:var(--danger-dim)}
+.btn-ghost{background:transparent;color:var(--txt2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--txt);border-color:var(--border2)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-xs{padding:4px 10px;font-size:11px}
+.btn-full{width:100%}
+.btn-icon{padding:8px;border-radius:8px}
+.login-err{
+  background:rgba(255,77,109,0.12);
+  border:1px solid rgba(255,77,109,0.3);
+  color:var(--danger);
+  border-radius:var(--radius);
+  padding:10px 14px;
+  font-size:13px;
+  margin-bottom:16px;
+  display:none;
+}
+.demo-info{
+  margin-top:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  font-size:12px;color:var(--txt2);
+}
+.demo-info strong{color:var(--txt);display:block;margin-bottom:8px}
+.demo-badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:4px;
+  font-size:11px;font-weight:600;
+  margin-right:4px;margin-bottom:4px;
+}
+.badge-admin{background:rgba(0,212,170,0.15);color:var(--primary)}
+.badge-eng{background:rgba(245,166,35,0.15);color:var(--accent)}
+.badge-view{background:rgba(59,130,246,0.15);color:var(--info)}
 
-        /* Mobile Fixes */
-        @media (max-width: 768px) {
-            .glass-panel {
-                backdrop-filter: none;
-                background: rgba(15, 23, 42, 0.95);
-                box-shadow: none;
-            }
-            
-            body {
-                background-image: none;
-                background-color: #0f172a;
-            }
+/* ====================== MAIN APP LAYOUT ====================== */
+#app{display:none;height:100vh;width:100vw;overflow:hidden}
+.app-wrap{display:flex;height:100%;position:relative}
 
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
+/* ====================== SIDEBAR ====================== */
+.sidebar{
+  width:var(--sidebar-w);
+  flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  height:100%;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:var(--trans);
+  position:relative;
+  z-index:100;
+}
+.sidebar-brand{
+  padding:18px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.sidebar-brand .brand-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dim));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#000;
+  flex-shrink:0;
+}
+.sidebar-brand .brand-text{
+  overflow:hidden;
+}
+.sidebar-brand h2{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:15px;font-weight:700;
+  color:var(--white);
+  line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sidebar-brand span{font-size:10px;color:var(--txt3);letter-spacing:0.5px}
+.sidebar-nav{
+  flex:1;overflow-y:auto;padding:12px 10px;
+}
+.nav-section{
+  margin-bottom:6px;
+}
+.nav-section-label{
+  font-size:9px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--txt3);
+  padding:8px 10px 4px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 12px;
+  border-radius:8px;
+  color:var(--txt2);
+  cursor:pointer;
+  transition:var(--trans);
+  margin-bottom:2px;
+  font-size:13.5px;font-weight:500;
+  white-space:nowrap;
+}
+.nav-item i{width:16px;text-align:center;font-size:14px;flex-shrink:0}
+.nav-item:hover{background:var(--surface2);color:var(--txt)}
+.nav-item.active{background:var(--primary-glow);color:var(--primary);border-left:3px solid var(--primary);padding-left:9px}
+.nav-item.active i{color:var(--primary)}
+.sidebar-footer{
+  padding:14px 16px;
+  border-top:1px solid var(--border);
+}
+.user-card{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  background:var(--surface);
+  border-radius:var(--radius);
+  cursor:pointer;
+  transition:var(--trans);
+}
+.user-card:hover{background:var(--surface2)}
+.user-avatar{
+  width:34px;height:34px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;
+  flex-shrink:0;
+}
+.avatar-admin{background:linear-gradient(135deg,var(--primary),var(--primary-dim));color:#000}
+.avatar-engineer{background:linear-gradient(135deg,var(--accent),var(--accent-dim));color:#000}
+.avatar-viewer{background:linear-gradient(135deg,var(--info),#2563eb);color:#fff}
+.user-info{flex:1;overflow:hidden}
+.user-info strong{display:block;font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-info span{font-size:11px;color:var(--txt3)}
+.user-logout{color:var(--txt3);font-size:14px;cursor:pointer;transition:var(--trans)}
+.user-logout:hover{color:var(--danger)}
 
-            /* Fix for clickable buttons on mobile */
-            button, a, input, select {
-                touch-action: manipulation;
-            }
-        }
+/* ====================== HEADER ====================== */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{
+  height:var(--header-h);
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 20px;
+  gap:14px;
+  flex-shrink:0;
+}
+.topbar-menu-btn{
+  display:none;
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--txt2);
+  width:36px;height:36px;
+  border-radius:8px;
+  align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;
+  transition:var(--trans);
+}
+.topbar-menu-btn:hover{background:var(--surface2);color:var(--txt)}
+.topbar-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px;font-weight:700;
+  color:var(--white);
+  flex:1;
+}
+.topbar-title span{color:var(--primary)}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.cloud-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--txt3);
+  padding:4px 10px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:6px;
+}
+.cloud-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--success);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e293b; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #475569; 
-            border-radius: 4px;
-        }
+/* ====================== CONTENT AREA ====================== */
+.content{
+  flex:1;
+  overflow-y:auto;
+  padding:22px 24px;
+}
+.page{display:none}
+.page.active{display:block;animation:fadeIn 0.25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:22px;flex-wrap:wrap;gap:12px;
+}
+.page-title h2{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:26px;font-weight:800;
+  color:var(--white);
+  letter-spacing:0.3px;
+}
+.page-title p{font-size:13px;color:var(--txt2);margin-top:2px}
+.page-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-        /* 3D Card Effect */
-        .card-3d {
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .card-3d:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-        }
+/* ====================== STAT CARDS ====================== */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:18px 20px;
+  position:relative;overflow:hidden;
+  transition:var(--trans);
+}
+.stat-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--c1),var(--c2,var(--c1)));
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-card .icon{
+  width:42px;height:42px;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  margin-bottom:14px;
+  background:rgba(255,255,255,0.05);
+}
+.stat-card .label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--txt2);margin-bottom:6px}
+.stat-card .value{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:34px;font-weight:800;
+  color:var(--white);
+  line-height:1;
+}
+.stat-card .sub{font-size:12px;color:var(--txt3);margin-top:6px}
+.stat-card .trend{
+  position:absolute;top:16px;right:18px;
+  font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:5px;
+}
+.trend-up{background:rgba(34,197,94,0.12);color:var(--success)}
+.trend-down{background:rgba(255,77,109,0.12);color:var(--danger)}
 
-        /* Loader */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+/* ====================== CARDS ====================== */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+}
+.card-header{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-header h3{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:17px;font-weight:700;
+  color:var(--white);
+}
+.card-body{padding:20px}
+.chart-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.chart-wrap{height:220px;position:relative}
+
+/* ====================== TABLE ====================== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{
+  background:var(--surface);
+  padding:10px 14px;
+  text-align:left;
+  font-size:10.5px;font-weight:700;
+  letter-spacing:0.8px;text-transform:uppercase;
+  color:var(--txt3);
+  white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+tbody td{
+  padding:11px 14px;
+  font-size:13px;color:var(--txt);
+  border-bottom:1px solid rgba(37,48,80,0.5);
+  vertical-align:middle;
+}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+tbody tr:last-child td{border-bottom:none}
+.badge{
+  display:inline-block;
+  padding:3px 9px;
+  border-radius:5px;
+  font-size:11px;font-weight:600;
+  white-space:nowrap;
+}
+.badge-primary{background:rgba(0,212,170,0.12);color:var(--primary)}
+.badge-accent{background:rgba(245,166,35,0.12);color:var(--accent)}
+.badge-success{background:rgba(34,197,94,0.12);color:var(--success)}
+.badge-danger{background:rgba(255,77,109,0.12);color:var(--danger)}
+.badge-warning{background:rgba(234,179,8,0.12);color:var(--warning)}
+.badge-info{background:rgba(59,130,246,0.12);color:var(--info)}
+.badge-neutral{background:rgba(255,255,255,0.07);color:var(--txt2)}
+
+/* ====================== MODAL ====================== */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.7);
+  z-index:1000;
+  display:none;align-items:center;justify-content:center;
+  padding:16px;
+  backdrop-filter:blur(4px);
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-lg);
+  width:100%;max-width:560px;
+  max-height:90vh;
+  display:flex;flex-direction:column;
+  box-shadow:var(--shadow-lg);
+  animation:slideUp 0.25s ease;
+}
+.modal-lg{max-width:720px}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.modal-header{
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-header h3{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;font-weight:700;color:var(--white);
+}
+.modal-close{
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--txt2);
+  width:30px;height:30px;
+  border-radius:7px;
+  cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--trans);
+}
+.modal-close:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.modal-body{padding:22px;overflow-y:auto;flex:1}
+.modal-footer{
+  padding:14px 22px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+.form-row.cols-1{grid-template-columns:1fr}
+.form-hint{font-size:11px;color:var(--txt3);margin-top:4px}
+select.form-control option{background:var(--surface2);color:var(--txt)}
+textarea.form-control{resize:vertical;min-height:80px}
+
+/* ====================== SEARCH & FILTER ====================== */
+.toolbar{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.search-box{
+  position:relative;flex:1;min-width:200px;
+}
+.search-box i{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--txt3);font-size:13px;
+}
+.search-box input{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:9px 12px 9px 36px;
+  font-size:13px;color:var(--txt);
+  outline:none;transition:var(--trans);
+  font-family:'Barlow',sans-serif;
+}
+.search-box input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+
+/* ====================== EMPTY STATE ====================== */
+.empty-state{
+  text-align:center;padding:50px 20px;
+  color:var(--txt3);
+}
+.empty-state i{font-size:42px;margin-bottom:14px;display:block;opacity:0.4}
+.empty-state h4{font-size:16px;font-weight:600;color:var(--txt2);margin-bottom:6px}
+.empty-state p{font-size:13px}
+
+/* ====================== ALERTS ====================== */
+.alert{
+  padding:12px 16px;
+  border-radius:var(--radius);
+  font-size:13px;
+  margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:10px;
+  border:1px solid;
+}
+.alert-success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:var(--success)}
+.alert-danger{background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3);color:var(--danger)}
+.alert-warning{background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);color:var(--warning)}
+.alert-info{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:var(--info)}
+
+/* ====================== TOAST ====================== */
+.toast-container{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:var(--radius);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  min-width:260px;max-width:340px;
+  box-shadow:var(--shadow);
+  font-size:13px;
+  pointer-events:all;
+  animation:toastIn 0.3s ease;
+}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+.toast.hide{animation:toastOut 0.3s ease forwards}
+@keyframes toastOut{to{transform:translateX(110%);opacity:0}}
+.toast-icon{font-size:16px}
+.toast-msg{flex:1;color:var(--txt)}
+.toast-close{color:var(--txt3);cursor:pointer;font-size:13px;padding:2px;transition:var(--trans)}
+.toast-close:hover{color:var(--txt)}
+.toast-success .toast-icon{color:var(--success)}
+.toast-danger .toast-icon{color:var(--danger)}
+.toast-warning .toast-icon{color:var(--warning)}
+.toast-info .toast-icon{color:var(--info)}
+
+/* ====================== SIDEBAR OVERLAY (MOBILE) ====================== */
+.sidebar-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:99;
+}
+
+/* ====================== PROGRESS BAR ====================== */
+.progress-bar{
+  background:var(--surface);
+  border-radius:4px;height:6px;overflow:hidden;
+  margin-top:6px;
+}
+.progress-fill{height:100%;border-radius:4px;transition:width 0.4s ease}
+
+/* ====================== CUSTOM FIELDS LIST ====================== */
+.field-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:8px;
+}
+.field-item .field-icon{
+  width:34px;height:34px;
+  background:var(--surface2);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--primary);
+  flex-shrink:0;
+}
+.field-item .field-info{flex:1;overflow:hidden}
+.field-item .field-info strong{display:block;font-size:13px;font-weight:600;color:var(--txt)}
+.field-item .field-info span{font-size:11px;color:var(--txt3)}
+.field-actions{display:flex;gap:6px}
+
+/* ====================== STEP INDICATOR (DPR) ====================== */
+.step-indicator{
+  display:flex;align-items:center;gap:0;
+  margin-bottom:24px;
+  overflow-x:auto;
+}
+.step{
+  display:flex;align-items:center;flex:1;min-width:0;
+}
+.step-dot{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--surface2);border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--txt3);
+  flex-shrink:0;transition:var(--trans);
+}
+.step.done .step-dot{background:var(--primary);border-color:var(--primary);color:#000}
+.step.active .step-dot{border-color:var(--primary);color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow)}
+.step-label{font-size:11px;color:var(--txt3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-line{flex:1;height:2px;background:var(--border2);margin:0 6px;margin-bottom:16px}
+.step.done+.step .step-line,.step.done .step-line{background:var(--primary)}
+
+/* ====================== TABS ====================== */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;gap:0;overflow-x:auto}
+.tab{
+  padding:10px 18px;font-size:13px;font-weight:600;
+  color:var(--txt3);cursor:pointer;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;transition:var(--trans);
+}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--primary);border-color:var(--primary)}
+
+/* ====================== GRID HELPERS ====================== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mb-0{margin-bottom:0!important}
+.mb-4{margin-bottom:4px}
+.mb-8{margin-bottom:8px}
+.mb-12{margin-bottom:12px}
+.mb-16{margin-bottom:16px}
+.mb-20{margin-bottom:20px}
+.mb-24{margin-bottom:24px}
+.mt-8{margin-top:8px}
+.mt-12{margin-top:12px}
+.mt-16{margin-top:16px}
+.flex{display:flex}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.text-primary{color:var(--primary)}
+.text-accent{color:var(--accent)}
+.text-danger{color:var(--danger)}
+.text-success{color:var(--success)}
+.text-muted{color:var(--txt2)}
+.text-right{text-align:right}
+.fw-600{font-weight:600}
+.fw-700{font-weight:700}
+.small{font-size:12px}
+.separator{height:1px;background:var(--border);margin:16px 0}
+
+/* ====================== RESPONSIVE ====================== */
+@media(max-width:768px){
+  :root{--sidebar-w:260px}
+  .sidebar{
+    position:fixed;left:calc(-1 * var(--sidebar-w));top:0;bottom:0;
+    z-index:200;
+    transition:left 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+  .sidebar.open{left:0;box-shadow:var(--shadow-lg)}
+  .sidebar-overlay{display:block}
+  .topbar-menu-btn{display:flex}
+  .content{padding:16px}
+  .form-row{grid-template-columns:1fr}
+  .form-row.cols-3{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .chart-grid{grid-template-columns:1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .topbar-title{font-size:18px}
+  .cloud-status{display:none}
+  .modal{max-width:100%;margin:0 8px}
+  .modal-lg{max-width:100%}
+  tbody td{padding:9px 10px;font-size:12px}
+  thead th{padding:8px 10px}
+}
+@media(max-width:380px){
+  .stats-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
-<body class="h-screen flex flex-col">
+<body>
 
-    <!-- LOGIN VIEW -->
-    <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-md card-3d relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Sai Eternal</h1>
-                <p class="text-gray-400 text-sm mt-2">Pipe Data Management System</p>
-            </div>
-            
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">User ID</label>
-                    <input type="text" id="username" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition text-white" placeholder="Enter ID">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Password</label>
-                    <input type="password" id="password" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition text-white" placeholder="Enter Password">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3 rounded-lg transition transform hover:scale-[1.02] shadow-lg">
-                    Login
-                </button>
-            </form>
-            
-            <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">v2.0 | Cloud Sync Enabled</p>
-            </div>
+<!-- ═══════════════════════════ LOGIN ═══════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="logo-icon"><i class="fas fa-pipe-section"></i></div>
+      <h1>SAI ETERNAL FOUNDATION</h1>
+      <p>Pipe Data Management System</p>
+    </div>
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <p>Sign in to access your dashboard</p>
+      <div class="login-err" id="loginErr"><i class="fas fa-circle-exclamation"></i> <span id="loginErrMsg">Invalid credentials</span></div>
+      <div class="form-group">
+        <label>User ID</label>
+        <input type="text" id="loginId" class="form-control" placeholder="Enter your user ID" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-group">
+          <input type="password" id="loginPass" class="form-control" placeholder="Enter your password" autocomplete="current-password">
+          <button class="toggle-pass" onclick="togglePass()"><i id="passIcon" class="fas fa-eye"></i></button>
         </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()"><i class="fas fa-right-to-bracket"></i> Sign In</button>
+    </div>
+    <div class="demo-info">
+      <strong><i class="fas fa-circle-info"></i> Demo Credentials</strong>
+      <div>
+        <span class="demo-badge badge-admin">Admin</span> saiadmin / SaiAdmin@12<br>
+        <span class="demo-badge badge-eng">Engineer</span> saiuser / user@saiEF<br>
+        <span class="demo-badge badge-view">Viewer</span> viewer / Sai@viewer
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ APP ═══════════════════════════ -->
+<div id="app">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <div class="app-wrap">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-pipe-section"></i></div>
+        <div class="brand-text">
+          <h2>SAI ETERNAL</h2>
+          <span>PIPE MANAGEMENT</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav">
+        <!-- Filled by JS -->
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-card" id="userCard">
+          <div class="user-avatar" id="userAvatar"></div>
+          <div class="user-info">
+            <strong id="userDisplayName">-</strong>
+            <span id="userRoleBadge">-</span>
+          </div>
+          <i class="fas fa-right-from-bracket user-logout" onclick="logout()" title="Logout"></i>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="topbar-menu-btn" id="menuBtn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <div class="topbar-title"><span id="topbarTitle">Dashboard</span></div>
+        <div class="topbar-actions">
+          <div class="cloud-status" id="cloudStatus">
+            <div class="cloud-dot" id="cloudDot"></div>
+            <span id="cloudLabel">Local Mode</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnQuickAdd" onclick="quickAction()" style="display:none"><i class="fas fa-plus"></i> <span id="quickAddLabel">Add</span></button>
+        </div>
+      </header>
+      <div class="content" id="mainContent">
+        <!-- Pages loaded here -->
+        <div id="pageDashboard" class="page"></div>
+        <div id="pageInventory" class="page"></div>
+        <div id="pageDpr" class="page"></div>
+        <div id="pageDprHistory" class="page"></div>
+        <div id="pageCustomFields" class="page"></div>
+        <div id="pageEngineers" class="page"></div>
+        <div id="pageReports" class="page"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
+
+<!-- Inventory Modal -->
+<div class="overlay" id="modalInventory">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="invModalTitle">Add Pipe Inventory</h3>
+      <button class="modal-close" onclick="closeModal('modalInventory')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pipe Type *</label>
+          <select id="invPipeType" class="form-control">
+            <option value="">Select type</option>
+            <option>DI Pipe</option><option>MS Pipe</option><option>PVC Pipe</option>
+            <option>HDPE Pipe</option><option>GI Pipe</option><option>CI Pipe</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Diameter (mm) *</label>
+          <input type="number" id="invDiameter" class="form-control" placeholder="e.g. 200">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Total Quantity *</label>
+          <input type="number" id="invQty" class="form-control" placeholder="Number of pipes">
+        </div>
+        <div class="form-group">
+          <label>Source *</label>
+          <select id="invSource" class="form-control" onchange="toggleCustomSource()">
+            <option value="">Select source</option>
+            <option>SAI</option><option>SUEZ</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="customSourceGroup" style="display:none">
+        <label>Custom Source</label>
+        <input type="text" id="invCustomSource" class="form-control" placeholder="Enter source name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pipe Length (m)</label>
+          <input type="number" id="invLength" class="form-control" placeholder="Length per pipe">
+        </div>
+        <div class="form-group">
+          <label>Grade / Class</label>
+          <input type="text" id="invGrade" class="form-control" placeholder="e.g. K9, Class B">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Location / Yard</label>
+        <input type="text" id="invLocation" class="form-control" placeholder="Storage location">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="invNotes" class="form-control" rows="3" placeholder="Any additional notes..."></textarea>
+      </div>
+      <!-- Custom fields container -->
+      <div id="invCustomFieldsContainer"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalInventory')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInventory()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DPR Modal -->
+<div class="overlay" id="modalDpr">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="dprModalTitle">Submit Daily Progress Report</h3>
+      <button class="modal-close" onclick="closeModal('modalDpr')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="dprDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Site Engineer Name *</label>
+          <input type="text" id="dprEngineer" class="form-control" placeholder="Enter engineer name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Working Area / Location *</label>
+          <input type="text" id="dprLocation" class="form-control" placeholder="Site location">
+        </div>
+        <div class="form-group">
+          <label>Contractor Name</label>
+          <input type="text" id="dprContractor" class="form-control" placeholder="Contractor name">
+        </div>
+      </div>
+      <div class="separator"></div>
+      <div class="form-row cols-3">
+        <div class="form-group">
+          <label>Pipe Type *</label>
+          <select id="dprPipeType" class="form-control" onchange="loadDprInventory()">
+            <option value="">Select type</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pipe Diameter (mm) *</label>
+          <select id="dprDiameter" class="form-control" onchange="updateDprStock()">
+            <option value="">Select diameter</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Available Stock</label>
+          <input type="text" id="dprStock" class="form-control" readonly style="background:var(--surface);color:var(--primary);">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Number of Pipes Used *</label>
+          <input type="number" id="dprPipesUsed" class="form-control" placeholder="0" min="0" oninput="calcDprLength()">
+          <div class="form-hint" id="dprStockHint"></div>
+        </div>
+        <div class="form-group">
+          <label>Total Length Installed (m) *</label>
+          <input type="number" id="dprLength" class="form-control" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Point (Junction)</label>
+          <input type="text" id="dprStartPt" class="form-control" placeholder="e.g. MH-001">
+        </div>
+        <div class="form-group">
+          <label>End Point (Junction)</label>
+          <input type="text" id="dprEndPt" class="form-control" placeholder="e.g. MH-002">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Depth of Pipeline (m)</label>
+          <input type="number" id="dprDepth" class="form-control" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Work Status *</label>
+          <select id="dprStatus" class="form-control">
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Soil Type</label>
+          <select id="dprSoil" class="form-control">
+            <option value="">Not specified</option>
+            <option>Rocky</option><option>Sandy</option><option>Clay</option>
+            <option>Loamy</option><option>Mixed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Weather Conditions</label>
+          <select id="dprWeather" class="form-control">
+            <option value="">Not specified</option>
+            <option>Sunny</option><option>Cloudy</option><option>Rainy</option>
+            <option>Windy</option><option>Foggy</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Pipes Left in Stock (manual override)</label>
+        <input type="number" id="dprRemaining" class="form-control" placeholder="Auto-calculated">
+        <div class="form-hint">Leave blank to auto-calculate from inventory</div>
+      </div>
+      <div class="form-group">
+        <label>Remarks / Notes</label>
+        <textarea id="dprRemarks" class="form-control" rows="3" placeholder="Any observations or remarks..."></textarea>
+      </div>
+      <!-- Custom DPR fields -->
+      <div id="dprCustomFieldsContainer"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalDpr')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDpr()"><i class="fas fa-paper-plane"></i> Submit DPR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Field Modal -->
+<div class="overlay" id="modalCustomField">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="cfModalTitle">Add Custom Field</h3>
+      <button class="modal-close" onclick="closeModal('modalCustomField')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Field Label *</label>
+        <input type="text" id="cfLabel" class="form-control" placeholder="e.g. Batch Number, Supplier Name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Field Type *</label>
+          <select id="cfType" class="form-control">
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+            <option value="select">Dropdown</option>
+            <option value="textarea">Long Text</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Module *</label>
+          <select id="cfModule" class="form-control">
+            <option value="inventory">Inventory</option>
+            <option value="dpr">DPR</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="cfOptionsGroup" style="display:none">
+        <label>Options (comma-separated)</label>
+        <input type="text" id="cfOptions" class="form-control" placeholder="Option1, Option2, Option3">
+      </div>
+      <div class="form-group">
+        <label>Required?</label>
+        <select id="cfRequired" class="form-control">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <input type="hidden" id="cfEditId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCustomField')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomField()"><i class="fas fa-save"></i> Save Field</button>
+    </div>
+  </div>
+</div>
+
+<!-- Engineer Modal -->
+<div class="overlay" id="modalEngineer">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="engModalTitle">Add Engineer</h3>
+      <button class="modal-close" onclick="closeModal('modalEngineer')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="engName" class="form-control" placeholder="Engineer's full name">
+        </div>
+        <div class="form-group">
+          <label>Employee ID</label>
+          <input type="text" id="engEmpId" class="form-control" placeholder="EMP-001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" id="engDesig" class="form-control" placeholder="e.g. Site Engineer">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" id="engPhone" class="form-control" placeholder="+91 00000 00000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Assigned Work Zone</label>
+        <input type="text" id="engZone" class="form-control" placeholder="e.g. Zone A, Sector 4">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="engNotes" class="form-control" rows="2" placeholder="Additional info..."></textarea>
+      </div>
+      <input type="hidden" id="engEditId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEngineer')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEngineer()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- View DPR Modal -->
+<div class="overlay" id="modalViewDpr">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>DPR Details</h3>
+      <button class="modal-close" onclick="closeModal('modalViewDpr')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="dprViewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalViewDpr')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="overlay" id="modalConfirm">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="confirmTitle">Confirm Delete</h3>
+      <button class="modal-close" onclick="closeModal('modalConfirm')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:var(--txt2);font-size:14px">Are you sure? This cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalConfirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn"><i class="fas fa-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ TOAST ═══════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SAI ETERNAL FOUNDATION — PIPE DATA MANAGEMENT SYSTEM
+   Version 2.0.0
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── USERS ─── */
+const USERS = {
+  saiadmin:  { pass:'SaiAdmin@12',  role:'admin',    name:'Sai Admin',   initial:'SA' },
+  saiuser:   { pass:'user@saiEF',   role:'engineer', name:'Site Engineer', initial:'SE' },
+  viewer:    { pass:'Sai@viewer',   role:'viewer',   name:'Viewer',      initial:'VW' }
+};
+
+/* ─── APP STATE ─── */
+let currentUser = null;
+let db = null; // Firebase db instance (if configured)
+let charts = {};
+let editingId = null;
+let confirmCallback = null;
+
+/* ─── DATA STORE (localStorage-backed) ─── */
+const Store = {
+  _get(key){ try{ return JSON.parse(localStorage.getItem('sef_'+key)||'null') }catch(e){return null} },
+  _set(key,val){ localStorage.setItem('sef_'+key, JSON.stringify(val)) },
+  get inventory(){ return this._get('inventory') || [] },
+  set inventory(v){ this._set('inventory',v) },
+  get dprs(){ return this._get('dprs') || [] },
+  set dprs(v){ this._set('dprs',v) },
+  get customFields(){ return this._get('customFields') || [] },
+  set customFields(v){ this._set('customFields',v) },
+  get engineers(){ return this._get('engineers') || [] },
+  set engineers(v){ this._set('engineers',v) },
+  save(){ /* triggers for Firebase sync */ onDataChange() }
+};
+
+/* ─── Firebase Integration (if available) ─── */
+function initFirebase(){
+  if(typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length){
+    db = firebase.firestore();
+    document.getElementById('cloudLabel').textContent = 'Firebase Sync';
+    document.getElementById('cloudDot').style.background = 'var(--primary)';
+    setupFirebaseListeners();
+    return true;
+  }
+  return false;
+}
+
+function setupFirebaseListeners(){
+  if(!db) return;
+  ['inventory','dprs','customFields','engineers'].forEach(col => {
+    db.collection(col).onSnapshot(snap => {
+      Store._set(col, snap.docs.map(d=>({id:d.id,...d.data()})));
+      renderCurrentPage();
+    });
+  });
+}
+
+async function fbSave(collection, data){
+  if(!db) return;
+  const id = data.id;
+  if(id) await db.collection(collection).doc(id).set(data);
+  else await db.collection(collection).add(data);
+}
+
+async function fbDelete(collection, id){
+  if(!db) return;
+  await db.collection(collection).doc(id).delete();
+}
+
+/* ─── ID generator ─── */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6) }
+function fmtDate(d){ return d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '-' }
+function fmtNum(n){ return isNaN(n)?0:Number(n) }
+
+/* ═══════════════ LOGIN ═══════════════ */
+function togglePass(){
+  const f = document.getElementById('loginPass');
+  const ic = document.getElementById('passIcon');
+  if(f.type==='password'){f.type='text';ic.className='fas fa-eye-slash'}
+  else{f.type='password';ic.className='fas fa-eye'}
+}
+
+function doLogin(){
+  const id = document.getElementById('loginId').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const user = USERS[id];
+  if(!user || user.pass !== pass){
+    document.getElementById('loginErr').style.display='flex';
+    document.getElementById('loginErrMsg').textContent='Invalid user ID or password.';
+    return;
+  }
+  document.getElementById('loginErr').style.display='none';
+  currentUser = {id, ...user};
+  sessionStorage.setItem('sef_session', JSON.stringify(currentUser));
+  showApp();
+}
+
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
+
+function logout(){
+  sessionStorage.removeItem('sef_session');
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPass').value='';
+  destroyCharts();
+}
+
+function checkSession(){
+  const s = sessionStorage.getItem('sef_session');
+  if(s){ try{ currentUser=JSON.parse(s); showApp(); }catch(e){} }
+}
+
+/* ═══════════════ APP INIT ═══════════════ */
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  initFirebase();
+  renderSidebar();
+  renderUserInfo();
+  navigateTo('dashboard');
+  toast('success',`Welcome back, ${currentUser.name}!`);
+}
+
+const NAV_ITEMS = {
+  admin: [
+    {id:'dashboard', icon:'fa-gauge',     label:'Dashboard'},
+    {id:'inventory', icon:'fa-boxes-stacked', label:'Inventory'},
+    {id:'dprHistory',icon:'fa-file-lines', label:'DPR Reports'},
+    {id:'customFields',icon:'fa-sliders', label:'Custom Fields'},
+    {id:'engineers', icon:'fa-hard-hat',  label:'Engineers'},
+    {id:'reports',   icon:'fa-chart-bar', label:'Export Reports'},
+  ],
+  engineer: [
+    {id:'dashboard', icon:'fa-gauge',     label:'Dashboard'},
+    {id:'inventory', icon:'fa-boxes-stacked', label:'View Inventory'},
+    {id:'dpr',       icon:'fa-clipboard-list', label:'Submit DPR'},
+    {id:'dprHistory',icon:'fa-file-lines', label:'My DPRs'},
+    {id:'reports',   icon:'fa-download',  label:'Export'},
+  ],
+  viewer: [
+    {id:'dashboard', icon:'fa-gauge',     label:'Dashboard'},
+    {id:'inventory', icon:'fa-boxes-stacked', label:'Inventory'},
+    {id:'dprHistory',icon:'fa-file-lines', label:'DPR Reports'},
+    {id:'reports',   icon:'fa-chart-bar', label:'Reports'},
+  ]
+};
+
+function renderSidebar(){
+  const nav = document.getElementById('sidebarNav');
+  const items = NAV_ITEMS[currentUser.role] || [];
+  nav.innerHTML = `<div class="nav-section"><div class="nav-section-label">Navigation</div>` +
+    items.map(i=>`<div class="nav-item" data-page="${i.id}" onclick="navigateTo('${i.id}')"><i class="fas ${i.icon}"></i><span>${i.label}</span></div>`).join('') +
+    `</div>`;
+}
+
+function renderUserInfo(){
+  const av = document.getElementById('userAvatar');
+  const cls = currentUser.role==='admin'?'avatar-admin':currentUser.role==='engineer'?'avatar-engineer':'avatar-viewer';
+  av.className=`user-avatar ${cls}`;
+  av.textContent=currentUser.initial;
+  document.getElementById('userDisplayName').textContent=currentUser.name;
+  document.getElementById('userRoleBadge').textContent=currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1);
+}
+
+let currentPage = '';
+function navigateTo(pageId){
+  closeSidebar();
+  currentPage = pageId;
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active',el.dataset.page===pageId)
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pages = {
+    dashboard:'pageDashboard', inventory:'pageInventory', dpr:'pageDpr',
+    dprHistory:'pageDprHistory', customFields:'pageCustomFields',
+    engineers:'pageEngineers', reports:'pageReports'
+  };
+  const pid = pages[pageId] || 'pageDashboard';
+  const el = document.getElementById(pid);
+  if(el) el.classList.add('active');
+
+  const titles = {
+    dashboard:'Dashboard', inventory:'Pipe Inventory', dpr:'Submit DPR',
+    dprHistory:'DPR Reports', customFields:'Custom Fields',
+    engineers:'Engineers', reports:'Export Reports'
+  };
+  document.getElementById('topbarTitle').textContent = titles[pageId]||pageId;
+
+  const qb = document.getElementById('btnQuickAdd');
+  const ql = document.getElementById('quickAddLabel');
+  if(currentUser.role!=='viewer'){
+    if(pageId==='inventory'&&currentUser.role==='admin'){qb.style.display='flex';ql.textContent='Add Pipe Stock'}
+    else if(pageId==='dpr'&&currentUser.role==='engineer'){qb.style.display='flex';ql.textContent='Submit DPR'}
+    else if(pageId==='engineers'&&currentUser.role==='admin'){qb.style.display='flex';ql.textContent='Add Engineer'}
+    else if(pageId==='customFields'&&currentUser.role==='admin'){qb.style.display='flex';ql.textContent='Add Field'}
+    else qb.style.display='none';
+  } else qb.style.display='none';
+
+  renderPage(pageId);
+}
+
+function quickAction(){
+  const p = currentPage;
+  if(p==='inventory') openInventoryModal();
+  else if(p==='dpr') openDprModal();
+  else if(p==='engineers') openEngineerModal();
+  else if(p==='customFields') openCustomFieldModal();
+}
+
+function renderCurrentPage(){ if(currentPage) renderPage(currentPage) }
+
+function renderPage(id){
+  switch(id){
+    case 'dashboard': renderDashboard(); break;
+    case 'inventory': renderInventory(); break;
+    case 'dpr': renderDprForm(); break;
+    case 'dprHistory': renderDprHistory(); break;
+    case 'customFields': renderCustomFields(); break;
+    case 'engineers': renderEngineers(); break;
+    case 'reports': renderReports(); break;
+  }
+}
+
+function onDataChange(){ renderCurrentPage() }
+
+/* ═══════════════ SIDEBAR MOBILE ═══════════════ */
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if(sb.classList.contains('open')){
+    sb.classList.remove('open');
+    ov.style.display='none';
+  } else {
+    sb.classList.add('open');
+    ov.style.display='block';
+  }
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').style.display='none';
+}
+
+/* ═══════════════ DASHBOARD ═══════════════ */
+function renderDashboard(){
+  const el = document.getElementById('pageDashboard');
+  const inv = Store.inventory;
+  const dprs = Store.dprs;
+  const totalPipes = inv.reduce((s,i)=>s+fmtNum(i.qty),0);
+  const assignedPipes = inv.reduce((s,i)=>s+fmtNum(i.assigned||0),0);
+  const usedPipes = dprs.reduce((s,d)=>s+fmtNum(d.pipesUsed),0);
+  const remaining = totalPipes - usedPipes;
+  const todayDprs = dprs.filter(d=>d.date===new Date().toISOString().slice(0,10)).length;
+  const pipeTypes = [...new Set(inv.map(i=>i.pipeType).filter(Boolean))];
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">
+        <h2>Overview Dashboard</h2>
+        <p>Real-time status of pipe inventory and field operations</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-ghost btn-sm" onclick="renderDashboard()"><i class="fas fa-rotate-right"></i> Refresh</button>
+      </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
-    <div id="app-container" class="hidden flex-1 flex overflow-hidden">
-        
-        <!-- SIDEBAR (ADMIN/ENGINEER) -->
-        <aside id="sidebar" class="sidebar w-64 bg-gray-900 border-r border-gray-800 flex flex-col z-30 fixed md:relative h-full">
-            <div class="p-6 border-b border-gray-800 flex items-center justify-between">
-                <h2 class="font-bold text-xl text-white">SEF <span class="text-blue-500">Pipes</span></h2>
-                <button id="close-sidebar" class="md:hidden text-gray-400 hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <nav id="nav-menu" class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <!-- Dynamic Nav Items -->
-            </nav>
-
-            <div class="p-4 border-t border-gray-800">
-                <button onclick="app.logout()" class="w-full flex items-center justify-center space-x-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 p-3 rounded-lg transition">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </button>
-            </div>
-        </aside>
-
-        <!-- CONTENT AREA -->
-        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-            
-            <!-- HEADER -->
-            <header class="bg-gray-900/80 border-b border-gray-800 p-4 flex items-center justify-between z-20 backdrop-blur-sm md:backdrop-blur-none">
-                <div class="flex items-center">
-                    <button id="menu-toggle" class="md:hidden mr-4 text-gray-300 hover:text-white">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                    <h1 id="page-title" class="text-xl font-semibold text-white">Dashboard</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div id="user-badge" class="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-800 border border-gray-700">
-                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span id="current-user" class="text-sm font-medium">Admin</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- SCROLLABLE CONTENT -->
-            <div id="main-content" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <!-- Dynamic Content Loads Here -->
-            </div>
-        </main>
+    <div class="stats-grid">
+      <div class="stat-card" style="--c1:var(--primary);--c2:#00a882">
+        <div class="icon" style="color:var(--primary)"><i class="fas fa-boxes-stacked"></i></div>
+        <div class="label">Total Pipes</div>
+        <div class="value">${totalPipes}</div>
+        <div class="sub">${inv.length} inventory entries</div>
+      </div>
+      <div class="stat-card" style="--c1:var(--accent);--c2:var(--accent-dim)">
+        <div class="icon" style="color:var(--accent)"><i class="fas fa-truck-ramp-box"></i></div>
+        <div class="label">Pipes Used</div>
+        <div class="value">${usedPipes}</div>
+        <div class="sub">${dprs.length} DPR entries</div>
+      </div>
+      <div class="stat-card" style="--c1:var(--success);--c2:#16a34a">
+        <div class="icon" style="color:var(--success)"><i class="fas fa-warehouse"></i></div>
+        <div class="label">Remaining Stock</div>
+        <div class="value">${Math.max(0,remaining)}</div>
+        <div class="sub">${totalPipes>0?Math.round(Math.max(0,remaining)/totalPipes*100):0}% remaining</div>
+        <div class="progress-bar mt-8"><div class="progress-fill" style="width:${totalPipes>0?Math.round(Math.max(0,remaining)/totalPipes*100):0}%;background:var(--success)"></div></div>
+      </div>
+      <div class="stat-card" style="--c1:var(--info);--c2:#2563eb">
+        <div class="icon" style="color:var(--info)"><i class="fas fa-clipboard-check"></i></div>
+        <div class="label">Today's DPRs</div>
+        <div class="value">${todayDprs}</div>
+        <div class="sub">${dprs.length} total reports</div>
+      </div>
     </div>
 
-    <!-- OVERLAYS -->
-    <div id="overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" onclick="app.toggleSidebar()"></div>
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:8px"></i>Inventory by Type</h3></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartByType"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartStock"></canvas></div></div>
+      </div>
+    </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- CONFIGURATION (SUPABASE) ---
-        // REPLACE THESE WITH YOUR ACTUAL SUPABASE URL AND KEY
-        const SB_URL = "https://example.supabase.co"; 
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4YW1wbGUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYyMDAwMDAwMCwiZXhwIjoxOTM1NTc2MDAwfQ.example_key";
-        
-        // --- INITIALIZATION ---
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        } catch (e) {
-            console.error("Supabase Init Failed", e);
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-file-lines" style="color:var(--primary);margin-right:8px"></i>Recent DPR Submissions</h3>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('dprHistory')">View All <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <div class="table-wrap">
+        ${dprs.length===0?`<div class="empty-state"><i class="fas fa-file-lines"></i><h4>No DPRs yet</h4><p>Daily progress reports will appear here</p></div>`:`
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Engineer</th><th>Location</th>
+            <th>Pipe Type</th><th>Pipes Used</th><th>Length (m)</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            ${dprs.slice().reverse().slice(0,8).map(d=>`
+            <tr>
+              <td>${fmtDate(d.date)}</td>
+              <td>${d.engineer||'-'}</td>
+              <td>${d.location||'-'}</td>
+              <td>${d.pipeType||'-'}</td>
+              <td>${d.pipesUsed||0}</td>
+              <td>${d.length||0}</td>
+              <td>${statusBadge(d.status)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `;
+
+  setTimeout(()=>{
+    // Bar chart
+    const inv2 = Store.inventory;
+    const byType = {};
+    inv2.forEach(i=>{
+      const k = i.pipeType||'Unknown';
+      byType[k]=(byType[k]||0)+fmtNum(i.qty);
+    });
+    destroyChart('chartByType');
+    const ctx1 = document.getElementById('chartByType');
+    if(ctx1){
+      charts['chartByType'] = new Chart(ctx1,{
+        type:'bar',
+        data:{
+          labels:Object.keys(byType),
+          datasets:[{
+            label:'Quantity',
+            data:Object.values(byType),
+            backgroundColor:'rgba(0,212,170,0.7)',
+            borderColor:'var(--primary)',
+            borderWidth:1,
+            borderRadius:4
+          }]
+        },
+        options:chartOpts(false)
+      });
+    }
+    // Pie chart
+    destroyChart('chartStock');
+    const ctx2 = document.getElementById('chartStock');
+    if(ctx2){
+      const used = Math.min(usedPipes,totalPipes);
+      const rem = Math.max(0,totalPipes-used);
+      charts['chartStock'] = new Chart(ctx2,{
+        type:'doughnut',
+        data:{
+          labels:['Used','Remaining'],
+          datasets:[{
+            data:[used,rem],
+            backgroundColor:['rgba(245,166,35,0.8)','rgba(0,212,170,0.8)'],
+            borderColor:['var(--accent)','var(--primary)'],
+            borderWidth:2
+          }]
+        },
+        options:{
+          ...chartOpts(true),
+          cutout:'68%',
+          plugins:{...chartOpts(true).plugins, legend:{...chartOpts(true).plugins.legend,display:true}}
         }
+      });
+    }
+  },100);
+}
 
-        // --- MOCK FALLBACK (If Supabase not configured) ---
-        // Note: In production, remove this and rely purely on Supabase.
-        const useMock = SB_URL === "https://example.supabase.co"; 
+function chartOpts(pie){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{
+        display:false,
+        labels:{color:'#8a9bc0',font:{family:'Barlow',size:12}}
+      },
+      tooltip:{
+        backgroundColor:'#1a2235',
+        borderColor:'#253050',
+        borderWidth:1,
+        titleColor:'#dde4f0',
+        bodyColor:'#8a9bc0',
+        padding:10
+      }
+    },
+    scales: pie ? {} : {
+      x:{grid:{color:'rgba(37,48,80,0.5)'},ticks:{color:'#5a6b8a',font:{family:'Barlow',size:11}}},
+      y:{grid:{color:'rgba(37,48,80,0.5)'},ticks:{color:'#5a6b8a',font:{family:'Barlow',size:11}},beginAtZero:true}
+    }
+  }
+}
 
-        const mockDB = {
-            inventory: [
-                {id: 1, pipe_type: 'MS Pipe', diameter: '12 inch', opening: 1000, used: 200},
-                {id: 2, pipe_type: 'GI Pipe', diameter: '4 inch', opening: 500, used: 50},
-                {id: 3, pipe_type: 'PVC Pipe', diameter: '6 inch', opening: 200, used: 0}
-            ],
-            engineers: [
-                {id: 1, name: 'Rajesh Kumar'},
-                {id: 2, name: 'Amit Singh'},
-                {id: 3, name: 'Suresh Patel'}
-            ],
-            assignments: [
-                {id: 1, engineer_id: 1, inventory_id: 1, assigned_qty: 500},
-                {id: 2, engineer_id: 1, inventory_id: 2, assigned_qty: 100},
-                {id: 3, engineer_id: 2, inventory_id: 1, assigned_qty: 200}
-            ],
-            dpr: [
-                {id: 1, engineer_id: 1, inventory_id: 1, used_qty: 50.5, date: '2023-10-25', created_at: new Date().toISOString()}
-            ]
-        };
+function destroyChart(id){ if(charts[id]){charts[id].destroy();delete charts[id]} }
+function destroyCharts(){ Object.keys(charts).forEach(k=>charts[k].destroy()); charts={} }
 
-        // --- APP STATE ---
-        const app = {
-            user: null, // { id, username, role }
-            role: null,
-            data: {
-                inventory: [],
-                engineers: [],
-                assignments: [],
-                dpr: []
-            },
-            charts: {},
+/* ═══════════════ INVENTORY ═══════════════ */
+function renderInventory(){
+  const el = document.getElementById('pageInventory');
+  const inv = Store.inventory;
+  const isAdmin = currentUser.role==='admin';
+  const dprs = Store.dprs;
+  const getUsed = (pipeType,diameter) => dprs.filter(d=>d.pipeType===pipeType&&String(d.diameter)===String(diameter)).reduce((s,d)=>s+fmtNum(d.pipesUsed),0);
 
-            init: async function() {
-                // Check Session
-                const storedUser = sessionStorage.getItem('sef_user');
-                if (storedUser) {
-                    this.user = JSON.parse(storedUser);
-                    this.role = this.user.role;
-                    document.getElementById('login-view').classList.add('hidden');
-                    document.getElementById('app-container').classList.remove('hidden');
-                    await this.loadData();
-                    this.renderRoute();
-                }
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>Pipe Inventory</h2><p>Manage and track all pipe stock</p></div>
+      <div class="page-actions">
+        ${isAdmin?`<button class="btn btn-primary" onclick="openInventoryModal()"><i class="fas fa-plus"></i> Add Stock</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="exportInventoryExcel()"><i class="fas fa-file-excel"></i> Export</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search inventory..." id="invSearch" oninput="filterInventoryTable()" /></div>
+        <select class="form-control" style="width:auto" id="invTypeFilter" onchange="filterInventoryTable()">
+          <option value="">All Types</option>
+          ${[...new Set(inv.map(i=>i.pipeType).filter(Boolean))].map(t=>`<option>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="table-wrap">
+        ${inv.length===0?`<div class="empty-state"><i class="fas fa-boxes-stacked"></i><h4>No inventory entries</h4><p>${isAdmin?'Click "Add Stock" to start adding pipes':'No inventory has been added yet'}</p></div>`:`
+        <table id="inventoryTable">
+          <thead><tr>
+            <th>#</th><th>Pipe Type</th><th>Diameter (mm)</th>
+            <th>Total Qty</th><th>Used</th><th>Available</th>
+            <th>Source</th><th>Grade</th><th>Location</th>
+            <th>Entry Date</th>${isAdmin?'<th>Actions</th>':''}
+          </tr></thead>
+          <tbody id="invTbody">
+            ${inv.map((item,idx)=>{
+              const used=getUsed(item.pipeType,item.diameter);
+              const avail=Math.max(0,fmtNum(item.qty)-used);
+              const pct = fmtNum(item.qty)>0?Math.round(avail/fmtNum(item.qty)*100):0;
+              return `<tr data-type="${item.pipeType||''}">
+                <td class="text-muted small">${idx+1}</td>
+                <td><strong>${item.pipeType||'-'}</strong></td>
+                <td>${item.diameter||'-'}</td>
+                <td><strong>${item.qty||0}</strong></td>
+                <td class="text-accent">${used}</td>
+                <td>
+                  <strong style="color:${avail<10?'var(--danger)':avail<30?'var(--warning)':'var(--success)'}">${avail}</strong>
+                  ${avail<10?'<span class="badge badge-danger ms-2">Low</span>':''}
+                </td>
+                <td><span class="badge badge-primary">${item.source||'-'}</span></td>
+                <td>${item.grade||'-'}</td>
+                <td>${item.location||'-'}</td>
+                <td class="text-muted small">${fmtDate(item.entryDate)}</td>
+                ${isAdmin?`<td>
+                  <div class="flex gap-8">
+                    <button class="btn btn-ghost btn-xs" onclick="openInventoryModal('${item.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn btn-danger btn-xs" onclick="deleteRecord('inventory','${item.id}','Delete this inventory entry?')"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>`:''}
+              </tr>`
+            }).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `;
+}
 
-                // Event Listeners
-                document.getElementById('login-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.login();
-                });
+function filterInventoryTable(){
+  const q = document.getElementById('invSearch')?.value.toLowerCase()||'';
+  const tf = document.getElementById('invTypeFilter')?.value||'';
+  document.querySelectorAll('#invTbody tr').forEach(row=>{
+    const t = row.textContent.toLowerCase();
+    const type = row.dataset.type||'';
+    row.style.display = (t.includes(q)&&(!tf||type===tf)) ?'' :'none';
+  });
+}
 
-                document.getElementById('menu-toggle').addEventListener('click', () => this.toggleSidebar());
-                document.getElementById('close-sidebar').addEventListener('click', () => this.toggleSidebar());
-                
-                // Real-time subscription (Supabase only)
-                if (!useMock && supabase) {
-                    this.subscribeToUpdates();
-                }
-            },
+function openInventoryModal(id=null){
+  editingId=id;
+  const title = document.getElementById('invModalTitle');
+  title.textContent = id ? 'Edit Pipe Inventory' : 'Add Pipe Inventory';
+  const cf = Store.customFields.filter(f=>f.module==='inventory'||f.module==='both');
+  document.getElementById('invCustomFieldsContainer').innerHTML = cf.length?`
+    <div class="separator"></div>
+    <div class="mb-8 fw-600 text-muted small" style="text-transform:uppercase;letter-spacing:0.8px">Custom Fields</div>
+    ${cf.map(f=>customFieldInput(f,'inv_cf_')).join('')}
+  `:'';
 
-            toggleSidebar: function() {
-                const sb = document.getElementById('sidebar');
-                const ov = document.getElementById('overlay');
-                sb.classList.toggle('active');
-                ov.classList.toggle('hidden');
-            },
+  if(id){
+    const item = Store.inventory.find(i=>i.id===id);
+    if(item){
+      document.getElementById('invPipeType').value=item.pipeType||'';
+      document.getElementById('invDiameter').value=item.diameter||'';
+      document.getElementById('invQty').value=item.qty||'';
+      const src=item.source||'';
+      if(['SAI','SUEZ',''].includes(src)||!src){
+        document.getElementById('invSource').value=src;
+      } else {
+        document.getElementById('invSource').value='Other';
+        document.getElementById('customSourceGroup').style.display='block';
+        document.getElementById('invCustomSource').value=src;
+      }
+      document.getElementById('invLength').value=item.pipeLength||'';
+      document.getElementById('invGrade').value=item.grade||'';
+      document.getElementById('invLocation').value=item.location||'';
+      document.getElementById('invNotes').value=item.notes||'';
+      cf.forEach(f=>{
+        const el=document.getElementById('inv_cf_'+f.id);
+        if(el) el.value=item['cf_'+f.id]||'';
+      });
+    }
+  } else {
+    document.getElementById('invPipeType').value='';
+    document.getElementById('invDiameter').value='';
+    document.getElementById('invQty').value='';
+    document.getElementById('invSource').value='';
+    document.getElementById('customSourceGroup').style.display='none';
+    document.getElementById('invLength').value='';
+    document.getElementById('invGrade').value='';
+    document.getElementById('invLocation').value='';
+    document.getElementById('invNotes').value='';
+  }
+  openModal('modalInventory');
+}
 
-            login: function() {
-                const u = document.getElementById('username').value;
-                const p = document.getElementById('password').value;
+function toggleCustomSource(){
+  const v = document.getElementById('invSource').value;
+  document.getElementById('customSourceGroup').style.display = v==='Other' ? 'block':'none';
+}
 
-                // Hardcoded Credentials per requirement
-                let role = null;
-                if (u === 'saiadmin' && p === 'SaiAdmin@12') role = 'admin';
-                else if (u === 'saiuser' && p === 'user@saiEF') role = 'engineer';
-                else if (u === 'viewer' && p === 'Sai@viewer') role = 'viewer';
+function saveInventory(){
+  const pipeType = document.getElementById('invPipeType').value;
+  const diameter = document.getElementById('invDiameter').value;
+  const qty = document.getElementById('invQty').value;
+  const srcRaw = document.getElementById('invSource').value;
+  const source = srcRaw==='Other' ? (document.getElementById('invCustomSource').value||'Other') : srcRaw;
+  if(!pipeType||!diameter||!qty||!source){toast('danger','Please fill all required fields');return}
 
-                if (role) {
-                    this.user = { username: u, role: role };
-                    this.role = role;
-                    sessionStorage.setItem('sef_user', JSON.stringify(this.user));
-                    
-                    document.getElementById('login-view').classList.add('hidden');
-                    document.getElementById('app-container').classList.remove('hidden');
-                    
-                    this.loadData().then(() => this.renderRoute());
-                } else {
-                    alert('Invalid Credentials');
-                }
-            },
+  const cf = Store.customFields.filter(f=>f.module==='inventory'||f.module==='both');
+  const cfData={};
+  for(const f of cf){
+    const el=document.getElementById('inv_cf_'+f.id);
+    if(f.required==='1'&&el&&!el.value){toast('danger',`"${f.label}" is required`);return}
+    if(el) cfData['cf_'+f.id]=el.value;
+  }
 
-            logout: function() {
-                sessionStorage.removeItem('sef_user');
-                location.reload();
-            },
+  const inv = Store.inventory;
+  const now = new Date().toISOString();
+  if(editingId){
+    const idx=inv.findIndex(i=>i.id===editingId);
+    if(idx>-1){
+      inv[idx]={...inv[idx],pipeType,diameter:fmtNum(diameter),qty:fmtNum(qty),source,
+        pipeLength:document.getElementById('invLength').value,
+        grade:document.getElementById('invGrade').value,
+        location:document.getElementById('invLocation').value,
+        notes:document.getElementById('invNotes').value,
+        updated:now,...cfData
+      };
+    }
+  } else {
+    inv.push({id:uid(),pipeType,diameter:fmtNum(diameter),qty:fmtNum(qty),source,
+      pipeLength:document.getElementById('invLength').value,
+      grade:document.getElementById('invGrade').value,
+      location:document.getElementById('invLocation').value,
+      notes:document.getElementById('invNotes').value,
+      entryDate:now,updated:now,...cfData
+    });
+  }
+  Store.inventory=inv;
+  if(db) inv.forEach(i=>fbSave('inventory',i));
+  closeModal('modalInventory');
+  renderPage('inventory');
+  toast('success', editingId?'Inventory updated':'Stock added successfully');
+  editingId=null;
+}
 
-            loadData: async function() {
-                if (useMock) {
-                    // Simulate network delay
-                    await new Promise(r => setTimeout(r, 500));
-                    this.data = JSON.parse(JSON.stringify(mockDB));
-                    return;
-                }
+/* ═══════════════ DPR PAGE (Engineer) ═══════════════ */
+function renderDprForm(){
+  const el = document.getElementById('pageDpr');
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>Daily Progress Report</h2><p>Submit field work progress for today</p></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-clipboard-list" style="color:var(--primary);margin-right:8px"></i>New DPR Entry</h3></div>
+      <div class="card-body">
+        <button class="btn btn-primary" onclick="openDprModal()"><i class="fas fa-plus"></i> Submit New DPR</button>
+        <span class="text-muted small" style="margin-left:14px">Click to open the DPR form and submit today's progress</span>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <div class="card-header"><h3>My Recent DPRs</h3></div>
+      <div class="table-wrap">
+        ${renderDprTable(Store.dprs.filter(d=>d.submittedBy===currentUser.id).slice().reverse().slice(0,5))}
+      </div>
+    </div>
+  `;
+}
 
-                // Fetch from Supabase
-                const [inv, eng, ass, d] = await Promise.all([
-                    supabase.from('inventory').select('*'),
-                    supabase.from('engineers').select('*'),
-                    supabase.from('assignments').select('*'),
-                    supabase.from('dpr').select('*')
-                ]);
+function openDprModal(id=null){
+  editingId=id;
+  document.getElementById('dprModalTitle').textContent = id?'Edit DPR':'Submit Daily Progress Report';
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('dprDate').value=today;
+  document.getElementById('dprEngineer').value=currentUser.name;
 
-                this.data.inventory = inv.data || [];
-                this.data.engineers = eng.data || [];
-                this.data.assignments = ass.data || [];
-                this.data.dpr = d.data || [];
-            },
+  // Populate pipe types from inventory
+  const inv=Store.inventory;
+  const types=[...new Set(inv.map(i=>i.pipeType).filter(Boolean))];
+  const ts=document.getElementById('dprPipeType');
+  ts.innerHTML='<option value="">Select type</option>'+types.map(t=>`<option>${t}</option>`).join('');
 
-            subscribeToUpdates: function() {
-                supabase.channel('public:inventory').on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, () => this.loadData().then(() => this.refreshView())).subscribe();
-                supabase.channel('public:dpr').on('postgres_changes', { event: '*', schema: 'public', table: 'dpr' }, () => this.loadData().then(() => this.refreshView())).subscribe();
-            },
+  // Custom DPR fields
+  const cf=Store.customFields.filter(f=>f.module==='dpr'||f.module==='both');
+  document.getElementById('dprCustomFieldsContainer').innerHTML=cf.length?`
+    <div class="separator"></div>
+    <div class="mb-8 fw-600 text-muted small" style="text-transform:uppercase;letter-spacing:0.8px">Custom Fields</div>
+    ${cf.map(f=>customFieldInput(f,'dpr_cf_')).join('')}
+  `:'';
 
-            refreshView: function() {
-                // Re-render current page
-                this.renderRoute();
-                // Update charts if they exist
-                if (this.charts.main) {
-                    this.charts.main.destroy();
-                    this.initCharts();
-                }
-            },
+  if(id){
+    const dpr=Store.dprs.find(d=>d.id===id);
+    if(dpr){
+      document.getElementById('dprDate').value=dpr.date||today;
+      document.getElementById('dprEngineer').value=dpr.engineer||'';
+      document.getElementById('dprLocation').value=dpr.location||'';
+      document.getElementById('dprContractor').value=dpr.contractor||'';
+      document.getElementById('dprPipeType').value=dpr.pipeType||'';
+      loadDprInventory();
+      setTimeout(()=>{
+        document.getElementById('dprDiameter').value=dpr.diameter||'';
+        updateDprStock();
+      },50);
+      document.getElementById('dprPipesUsed').value=dpr.pipesUsed||'';
+      document.getElementById('dprLength').value=dpr.length||'';
+      document.getElementById('dprStartPt').value=dpr.startPt||'';
+      document.getElementById('dprEndPt').value=dpr.endPt||'';
+      document.getElementById('dprDepth').value=dpr.depth||'';
+      document.getElementById('dprStatus').value=dpr.status||'Ongoing';
+      document.getElementById('dprSoil').value=dpr.soil||'';
+      document.getElementById('dprWeather').value=dpr.weather||'';
+      document.getElementById('dprRemarks').value=dpr.remarks||'';
+      cf.forEach(f=>{
+        const el=document.getElementById('dpr_cf_'+f.id);
+        if(el) el.value=dpr['cf_'+f.id]||'';
+      });
+    }
+  } else {
+    ['dprLocation','dprContractor','dprPipesUsed','dprLength','dprStartPt','dprEndPt','dprDepth','dprRemarks','dprRemaining'].forEach(id=>{
+      const e=document.getElementById(id); if(e) e.value='';
+    });
+    document.getElementById('dprStatus').value='Ongoing';
+    document.getElementById('dprStock').value='';
+    document.getElementById('dprStockHint').textContent='';
+  }
+  openModal('modalDpr');
+}
 
-            renderRoute: function() {
-                const nav = document.getElementById('nav-menu');
-                const content = document.getElementById('main-content');
-                const title = document.getElementById('page-title');
-                document.getElementById('current-user').textContent = this.user.username + ' (' + this.role + ')';
+function loadDprInventory(){
+  const pipeType=document.getElementById('dprPipeType').value;
+  const inv=Store.inventory.filter(i=>i.pipeType===pipeType);
+  const diams=[...new Set(inv.map(i=>i.diameter))];
+  const dd=document.getElementById('dprDiameter');
+  dd.innerHTML='<option value="">Select diameter</option>'+diams.map(d=>`<option>${d}</option>`).join('');
+  document.getElementById('dprStock').value='';
+}
 
-                nav.innerHTML = '';
-                content.innerHTML = '<div class="flex justify-center items-center h-64"><div class="loader"></div></div>';
+function updateDprStock(){
+  const pipeType=document.getElementById('dprPipeType').value;
+  const diam=document.getElementById('dprDiameter').value;
+  if(!pipeType||!diam){document.getElementById('dprStock').value='';return}
+  const inv=Store.inventory;
+  const dprs=Store.dprs;
+  const total=inv.filter(i=>i.pipeType===pipeType&&String(i.diameter)===String(diam)).reduce((s,i)=>s+fmtNum(i.qty),0);
+  const used=dprs.filter(d=>d.pipeType===pipeType&&String(d.diameter)===String(diam)).reduce((s,d)=>s+fmtNum(d.pipesUsed),0);
+  const avail=Math.max(0,total-used);
+  document.getElementById('dprStock').value=avail;
+  const hint=document.getElementById('dprStockHint');
+  if(avail<10) hint.innerHTML=`<span style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> Low stock warning!</span>`;
+  else hint.textContent='';
+}
 
-                if (this.role === 'admin') {
-                    title.textContent = "Admin Dashboard";
-                    nav.innerHTML = `
-                        <a href="#" onclick="app.navigate('dashboard')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-chart-pie w-5"></i><span>Dashboard</span>
-                        </a>
-                        <a href="#" onclick="app.navigate('inventory')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-boxes w-5"></i><span>Inventory</span>
-                        </a>
-                        <a href="#" onclick="app.navigate('assignments')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-user-plus w-5"></i><span>Assignments</span>
-                        </a>
-                        <a href="#" onclick="app.navigate('reports')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-file-excel w-5"></i><span>Reports</span>
-                        </a>
-                    `;
-                    this.navigate('dashboard');
-                } 
-                else if (this.role === 'engineer') {
-                    title.textContent = "Engineer Panel";
-                    nav.innerHTML = `
-                         <a href="#" onclick="app.navigate('engineer_dpr')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-edit w-5"></i><span>DPR Entry</span>
-                        </a>
-                        <a href="#" onclick="app.navigate('engineer_stock')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-box-open w-5"></i><span>My Stock</span>
-                        </a>
-                    `;
-                    // Default to engineer list selection first
-                    this.renderEngineerSelect();
-                }
-                else if (this.role === 'viewer') {
-                    title.textContent = "Viewer Dashboard";
-                    nav.innerHTML = `
-                        <a href="#" onclick="app.navigate('dashboard')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-chart-pie w-5"></i><span>Overview</span>
-                        </a>
-                        <a href="#" onclick="app.navigate('reports')" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">
-                            <i class="fas fa-file-excel w-5"></i><span>Reports</span>
-                        </a>
-                    `;
-                    this.navigate('dashboard');
-                }
-            },
+function calcDprLength(){
+  const inv=Store.inventory;
+  const pipeType=document.getElementById('dprPipeType').value;
+  const diam=document.getElementById('dprDiameter').value;
+  const pipes=fmtNum(document.getElementById('dprPipesUsed').value);
+  const match=inv.find(i=>i.pipeType===pipeType&&String(i.diameter)===String(diam));
+  if(match&&match.pipeLength&&pipes){
+    document.getElementById('dprLength').value=(pipes*fmtNum(match.pipeLength)).toFixed(2);
+  }
+}
 
-            navigate: function(page) {
-                if(this.role === 'engineer' && page !== 'engineer_dpr' && page !== 'engineer_stock') {
-                    // Engineer stays in their lane unless handled specially
-                    if(page !== 'engineer_select') this.renderEngineerSelect();
-                    return;
-                }
+function saveDpr(){
+  const date=document.getElementById('dprDate').value;
+  const engineer=document.getElementById('dprEngineer').value;
+  const location=document.getElementById('dprLocation').value;
+  const pipeType=document.getElementById('dprPipeType').value;
+  const diameter=document.getElementById('dprDiameter').value;
+  const pipesUsed=document.getElementById('dprPipesUsed').value;
+  const length=document.getElementById('dprLength').value;
+  if(!date||!engineer||!location||!pipeType||!diameter||!pipesUsed||!length){
+    toast('danger','Please fill all required fields');return;
+  }
+  // Stock check
+  const pipeTypeV=pipeType; const diamV=diameter;
+  const invItems=Store.inventory.filter(i=>i.pipeType===pipeTypeV&&String(i.diameter)===String(diamV));
+  const totalStock=invItems.reduce((s,i)=>s+fmtNum(i.qty),0);
+  const existingDprs=Store.dprs.filter(d=>d.pipeType===pipeTypeV&&String(d.diameter)===String(diamV)&&d.id!==editingId);
+  const existingUsed=existingDprs.reduce((s,d)=>s+fmtNum(d.pipesUsed),0);
+  const available=totalStock-existingUsed;
+  if(fmtNum(pipesUsed)>available){
+    toast('danger',`Insufficient stock! Only ${available} pipes available for ${pipeType} Ø${diameter}mm`);return;
+  }
 
-                switch(page) {
-                    case 'dashboard': this.renderAdminDashboard(); break;
-                    case 'inventory': this.renderInventory(); break;
-                    case 'assignments': this.renderAssignments(); break;
-                    case 'reports': this.renderReports(); break;
-                    case 'engineer_dpr': this.renderDPRForm(); break;
-                    case 'engineer_stock': this.renderEngineerStock(); break;
-                }
-                this.toggleSidebar(); // Close mobile menu on nav
-            },
+  const cf=Store.customFields.filter(f=>f.module==='dpr'||f.module==='both');
+  const cfData={};
+  for(const f of cf){
+    const el=document.getElementById('dpr_cf_'+f.id);
+    if(f.required==='1'&&el&&!el.value){toast('danger',`"${f.label}" is required`);return}
+    if(el) cfData['cf_'+f.id]=el.value;
+  }
 
-            // --- RENDERERS ---
+  const dprs=Store.dprs;
+  const now=new Date().toISOString();
+  const entry={
+    date,engineer,location,
+    contractor:document.getElementById('dprContractor').value,
+    pipeType,diameter:fmtNum(diameter),
+    pipesUsed:fmtNum(pipesUsed),
+    length:fmtNum(document.getElementById('dprLength').value),
+    startPt:document.getElementById('dprStartPt').value,
+    endPt:document.getElementById('dprEndPt').value,
+    depth:document.getElementById('dprDepth').value,
+    status:document.getElementById('dprStatus').value,
+    soil:document.getElementById('dprSoil').value,
+    weather:document.getElementById('dprWeather').value,
+    remarks:document.getElementById('dprRemarks').value,
+    submittedBy:currentUser.id,
+    submittedAt:now,...cfData
+  };
 
-            renderAdminDashboard: function() {
-                const content = document.getElementById('main-content');
-                
-                // Calculate Stats
-                const totalInv = this.data.inventory.reduce((acc, i) => acc + Number(i.opening), 0);
-                const totalUsed = this.data.dpr.reduce((acc, d) => acc + Number(d.used_qty), 0);
-                const totalAssigned = this.data.assignments.reduce((acc, a) => acc + Number(a.assigned_qty), 0);
-                const remaining = totalInv - totalUsed;
+  if(editingId){
+    const idx=dprs.findIndex(d=>d.id===editingId);
+    if(idx>-1) dprs[idx]={...dprs[idx],...entry};
+  } else {
+    entry.id=uid();
+    dprs.push(entry);
+  }
+  Store.dprs=dprs;
+  if(db) dprs.forEach(d=>fbSave('dprs',d));
+  closeModal('modalDpr');
+  renderCurrentPage();
+  toast('success',editingId?'DPR updated':'DPR submitted successfully! Stock updated.');
+  editingId=null;
+}
 
-                content.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500 card-3d">
-                            <h3 class="text-gray-400 text-sm">Total Inventory</h3>
-                            <p class="text-2xl font-bold mt-1">${totalInv}</p>
-                        </div>
-                        <div class="glass-panel p-5 rounded-xl border-l-4 border-emerald-500 card-3d">
-                            <h3 class="text-gray-400 text-sm">Assigned Pipes</h3>
-                            <p class="text-2xl font-bold mt-1">${totalAssigned}</p>
-                        </div>
-                        <div class="glass-panel p-5 rounded-xl border-l-4 border-red-500 card-3d">
-                            <h3 class="text-gray-400 text-sm">Total Used</h3>
-                            <p class="text-2xl font-bold mt-1">${totalUsed.toFixed(2)}</p>
-                        </div>
-                        <div class="glass-panel p-5 rounded-xl border-l-4 border-yellow-500 card-3d">
-                            <h3 class="text-gray-400 text-sm">Remaining Stock</h3>
-                            <p class="text-2xl font-bold mt-1">${(totalInv - totalUsed).toFixed(2)}</p>
-                        </div>
-                    </div>
+/* ═══════════════ DPR HISTORY ═══════════════ */
+function renderDprHistory(){
+  const el=document.getElementById('pageDprHistory');
+  const isAdmin=currentUser.role==='admin';
+  let dprs=Store.dprs.slice().reverse();
+  if(!isAdmin) dprs=dprs.filter(d=>d.submittedBy===currentUser.id);
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="glass-panel p-6 rounded-xl lg:col-span-2">
-                            <h3 class="text-lg font-semibold mb-4">Usage Overview</h3>
-                            <canvas id="dashChart"></canvas>
-                        </div>
-                        <div class="glass-panel p-6 rounded-xl">
-                            <h3 class="text-lg font-semibold mb-4">Live Updates</h3>
-                            <div class="space-y-3" id="live-feed">
-                                ${this.data.dpr.slice(-3).reverse().map(d => {
-                                    const inv = this.data.inventory.find(i => i.id === d.inventory_id);
-                                    return `<div class="p-3 bg-gray-800 rounded border border-gray-700 text-sm">
-                                        <span class="text-emerald-400 font-bold">${d.used_qty}</span> used from ${inv ? inv.pipe_type : 'Unknown'}
-                                        <div class="text-xs text-gray-500">${new Date(d.created_at).toLocaleTimeString()}</div>
-                                    </div>`
-                                }).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                this.initCharts();
-            },
-
-            initCharts: function() {
-                const ctx = document.getElementById('dashChart');
-                if(!ctx) return;
-
-                const pipeTypes = [...new Set(this.data.inventory.map(i => i.pipe_type))];
-                const dataPerType = pipeTypes.map(type => {
-                    const inv = this.data.inventory.find(i => i.pipe_type === type);
-                    const used = this.data.dpr.filter(d => d.inventory_id === inv.id).reduce((a,b) => a + Number(b.used_qty), 0);
-                    return used;
-                });
-
-                this.charts.main = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: pipeTypes,
-                        datasets: [{
-                            label: 'Used Quantity',
-                            data: dataPerType,
-                            backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                            borderColor: '#3b82f6',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: '#374151' } },
-                            x: { grid: { display: false } }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            },
-
-            renderInventory: function() {
-                const content = document.getElementById('main-content');
-                content.innerHTML = `
-                    <div class="glass-panel p-6 rounded-xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold">Inventory Management</h2>
-                            ${this.role === 'admin' ? `<button onclick="app.showAddInventoryModal()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm"><i class="fas fa-plus"></i> Add Pipe</button>` : ''}
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="text-gray-400 border-b border-gray-700 text-sm">
-                                        <th class="p-3">Pipe Type</th>
-                                        <th class="p-3">Diameter</th>
-                                        <th class="p-3">Opening Balance</th>
-                                        <th class="p-3">Used</th>
-                                        <th class="p-3">Remaining</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-gray-300 text-sm">
-                                    ${this.data.inventory.map(item => {
-                                        const used = this.data.dpr.filter(d => d.inventory_id === item.id).reduce((a,b) => a + Number(b.used_qty), 0);
-                                        return `
-                                        <tr class="border-b border-gray-800 hover:bg-gray-800/50">
-                                            <td class="p-3 font-medium">${item.pipe_type}</td>
-                                            <td class="p-3">${item.diameter}</td>
-                                            <td class="p-3">${item.opening}</td>
-                                            <td class="p-3 text-red-400">${used.toFixed(2)}</td>
-                                            <td class="p-3 text-emerald-400 font-bold">${(item.opening - used).toFixed(2)}</td>
-                                        </tr>
-                                        `
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            },
-
-            renderAssignments: function() {
-                const content = document.getElementById('main-content');
-                content.innerHTML = `
-                     <div class="glass-panel p-6 rounded-xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold">Engineer Assignments</h2>
-                             ${this.role === 'admin' ? `<button onclick="app.showAssignModal()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-sm"><i class="fas fa-plus"></i> New Assignment</button>` : ''}
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="text-gray-400 border-b border-gray-700 text-sm">
-                                        <th class="p-3">Engineer</th>
-                                        <th class="p-3">Pipe Type</th>
-                                        <th class="p-3">Diameter</th>
-                                        <th class="p-3">Assigned Qty</th>
-                                        <th class="p-3">Used</th>
-                                        <th class="p-3">Available</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-gray-300 text-sm">
-                                    ${this.data.assignments.map(ass => {
-                                        const eng = this.data.engineers.find(e => e.id === ass.engineer_id) || {name: 'Unknown'};
-                                        const inv = this.data.inventory.find(i => i.id === ass.inventory_id) || {};
-                                        const used = this.data.dpr.filter(d => d.engineer_id === ass.engineer_id && d.inventory_id === ass.inventory_id).reduce((a,b) => a + Number(b.used_qty), 0);
-                                        
-                                        return `
-                                        <tr class="border-b border-gray-800">
-                                            <td class="p-3 font-medium">${eng.name}</td>
-                                            <td class="p-3">${inv.pipe_type}</td>
-                                            <td class="p-3">${inv.diameter}</td>
-                                            <td class="p-3">${ass.assigned_qty}</td>
-                                            <td class="p-3 text-red-400">${used.toFixed(2)}</td>
-                                            <td class="p-3 text-emerald-400 font-bold">${(ass.assigned_qty - used).toFixed(2)}</td>
-                                        </tr>
-                                        `
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            },
-
-            renderEngineerSelect: function() {
-                const content = document.getElementById('main-content');
-                document.getElementById('page-title').textContent = "Select Engineer";
-                
-                content.innerHTML = `
-                    <div class="glass-panel p-8 rounded-xl max-w-md mx-auto mt-10 text-center">
-                        <h2 class="text-xl font-bold mb-6">Select Your Profile</h2>
-                        <select id="engineer-select" class="w-full bg-gray-800 border border-gray-700 rounded p-3 mb-4 text-white">
-                            ${this.data.engineers.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
-                        </select>
-                        <button onclick="app.loadEngineerDashboard()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-lg font-bold">
-                            Proceed <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
-                    </div>
-                `;
-            },
-
-            loadEngineerDashboard: function() {
-                const select = document.getElementById('engineer-select');
-                if(select) {
-                    // Store selected ID in session or pass via route
-                    sessionStorage.setItem('sef_current_eng', select.value);
-                    this.navigate('engineer_dpr');
-                }
-            },
-
-            renderDPRForm: function() {
-                const engId = sessionStorage.getItem('sef_current_eng');
-                if(!engId) return this.renderEngineerSelect();
-
-                const content = document.getElementById('main-content');
-                document.getElementById('page-title').textContent = "Daily Progress Report";
-
-                // Filter assignments for this engineer
-                const myAssignments = this.data.assignments.filter(a => a.engineer_id == engId);
-                
-                // Options for dropdown
-                const options = myAssignments.map(a => {
-                    const inv = this.data.inventory.find(i => i.id === a.inventory_id);
-                    const used = this.data.dpr.filter(d => d.engineer_id == engId && d.inventory_id == a.inventory_id).reduce((x,y) => x + Number(y.used_qty), 0);
-                    const avail = a.assigned_qty - used;
-                    return `<option value="${a.id}|${a.inventory_id}|${avail}">${inv.pipe_type} (${inv.diameter}) - Avail: ${avail.toFixed(2)}</option>`;
-                }).join('');
-
-                content.innerHTML = `
-                    <div class="glass-panel p-6 rounded-xl max-w-2xl mx-auto">
-                        <h2 class="text-xl font-bold mb-6 border-b border-gray-700 pb-2">DPR Submission</h2>
-                        <form id="dpr-form" class="space-y-4">
-                            <div>
-                                <label class="block text-sm text-gray-400 mb-1">Select Pipe Assignment</label>
-                                <select id="dpr-assignment" required class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white">
-                                    <option value="">-- Select Pipe --</option>
-                                    ${options}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-400 mb-1">Used Quantity (Decimal Allowed)</label>
-                                <input type="number" id="dpr-qty" step="0.01" min="0.01" required class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white" placeholder="e.g., 12.5">
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-400 mb-1">Date</label>
-                                <input type="date" id="dpr-date" required class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white" value="${new Date().toISOString().split('T')[0]}">
-                            </div>
-                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 py-3 rounded-lg font-bold shadow-lg mt-4">
-                                Submit Report
-                            </button>
-                        </form>
-                    </div>
-                `;
-
-                document.getElementById('dpr-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.submitDPR();
-                });
-            },
-
-            submitDPR: function() {
-                const assignmentId = document.getElementById('dpr-assignment').value.split('|')[0];
-                const invId = document.getElementById('dpr-assignment').value.split('|')[1];
-                const avail = parseFloat(document.getElementById('dpr-assignment').value.split('|')[2]);
-                const qty = parseFloat(document.getElementById('dpr-qty').value);
-                const date = document.getElementById('dpr-date').value;
-                const engId = sessionStorage.getItem('sef_current_eng');
-
-                if (qty > avail) {
-                    alert("Error: Used quantity exceeds available stock (" + avail + ")");
-                    return;
-                }
-
-                const newDPR = {
-                    engineer_id: engId,
-                    inventory_id: invId, // Note: this is inventory_id based on assignment logic
-                    used_qty: qty,
-                    date: date,
-                    created_at: new Date().toISOString()
-                };
-
-                if (useMock) {
-                    newDPR.id = mockDB.dpr.length + 1;
-                    mockDB.dpr.push(newDPR);
-                    alert("DPR Submitted Successfully (Local Mode)!");
-                    this.loadData().then(() => this.navigate('engineer_dpr'));
-                } else {
-                    supabase.from('dpr').insert([newDPR]).then(res => {
-                        if(res.error) alert("Error: " + res.error.message);
-                        else {
-                            alert("DPR Submitted Successfully!");
-                            this.loadData().then(() => this.navigate('engineer_dpr'));
-                        }
-                    });
-                }
-            },
-
-            renderEngineerStock: function() {
-                const engId = sessionStorage.getItem('sef_current_eng');
-                if(!engId) return this.renderEngineerSelect();
-                
-                const content = document.getElementById('main-content');
-                const myAssignments = this.data.assignments.filter(a => a.engineer_id == engId);
-
-                content.innerHTML = `
-                    <div class="glass-panel p-6 rounded-xl">
-                         <h2 class="text-xl font-bold mb-4">My Assigned Stock</h2>
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${myAssignments.map(a => {
-                                const inv = this.data.inventory.find(i => i.id === a.inventory_id);
-                                const used = this.data.dpr.filter(d => d.engineer_id == engId && d.inventory_id == a.inventory_id).reduce((x,y) => x + Number(y.used_qty), 0);
-                                const remaining = a.assigned_qty - used;
-                                return `
-                                <div class="bg-gray-800 p-4 rounded border border-gray-700">
-                                    <h3 class="font-bold text-lg text-blue-400">${inv.pipe_type}</h3>
-                                    <p class="text-sm text-gray-400">${inv.diameter}</p>
-                                    <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                        <div>Assigned: <span class="font-bold">${a.assigned_qty}</span></div>
-                                        <div>Used: <span class="font-bold text-red-400">${used.toFixed(2)}</span></div>
-                                        <div class="col-span-2 mt-2 pt-2 border-t border-gray-700">Available: <span class="font-bold text-emerald-400 text-lg">${remaining.toFixed(2)}</span></div>
-                                    </div>
-                                </div>
-                                `
-                            }).join('')}
-                         </div>
-                    </div>
-                `;
-            },
-
-            renderReports: function() {
-                const content = document.getElementById('main-content');
-                content.innerHTML = `
-                    <div class="glass-panel p-6 rounded-xl">
-                        <h2 class="text-xl font-bold mb-6">Export Reports</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button onclick="app.exportInventory()" class="p-4 bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 flex flex-col items-center justify-center space-y-2 transition">
-                                <i class="fas fa-file-excel text-2xl text-green-500"></i>
-                                <span>Inventory Report</span>
-                            </button>
-                            <button onclick="app.exportDPR()" class="p-4 bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 flex flex-col items-center justify-center space-y-2 transition">
-                                <i class="fas fa-file-excel text-2xl text-blue-500"></i>
-                                <span>DPR Report</span>
-                            </button>
-                             <button onclick="app.exportEngineer()" class="p-4 bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 flex flex-col items-center justify-center space-y-2 transition">
-                                <i class="fas fa-file-excel text-2xl text-yellow-500"></i>
-                                <span>Engineer Report</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            },
-
-            // --- EXPORT LOGIC ---
-            exportInventory: function() {
-                const data = this.data.inventory.map(i => {
-                    const used = this.data.dpr.filter(d => d.inventory_id === i.id).reduce((a,b) => a + Number(b.used_qty), 0);
-                    return { "Pipe Type": i.pipe_type, "Diameter": i.diameter, "Opening": i.opening, "Used": used, "Remaining": i.opening - used };
-                });
-                this.downloadExcel(data, "Inventory_Report");
-            },
-
-            exportDPR: function() {
-                const data = this.data.dpr.map(d => {
-                    const inv = this.data.inventory.find(i => i.id === d.inventory_id) || {};
-                    const eng = this.data.engineers.find(e => e.id == d.engineer_id) || {};
-                    return { "Date": d.date, "Engineer": eng.name, "Pipe": inv.pipe_type, "Diameter": inv.diameter, "Used": d.used_qty };
-                });
-                this.downloadExcel(data, "DPR_Report");
-            },
-
-            exportEngineer: function() {
-                // Complex join
-                const rows = [];
-                this.data.engineers.forEach(e => {
-                    const ass = this.data.assignments.filter(a => a.engineer_id == e.id);
-                    ass.forEach(a => {
-                        const inv = this.data.inventory.find(i => i.id === a.inventory_id);
-                        const used = this.data.dpr.filter(d => d.engineer_id == e.id && d.inventory_id == a.inventory_id).reduce((x,y) => x + Number(y.used_qty), 0);
-                        rows.push({ "Engineer": e.name, "Pipe": inv.pipe_type, "Diameter": inv.diameter, "Assigned": a.assigned_qty, "Used": used, "Balance": a.assigned_qty - used });
-                    });
-                });
-                this.downloadExcel(rows, "Engineer_Report");
-            },
-
-            downloadExcel: function(json, filename) {
-                const ws = XLSX.utils.json_to_sheet(json);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Report");
-                const date = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(wb, `Pipe_${filename}_${date}.xlsx`);
-            },
-
-            // --- MODALS (Simplified for single file) ---
-            showAddInventoryModal: function() {
-                const html = `
-                <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-                    <div class="glass-panel p-6 rounded-xl w-full max-w-md">
-                        <h3 class="text-lg font-bold mb-4">Add New Pipe</h3>
-                        <form id="add-inv-form" class="space-y-3">
-                            <input type="text" id="new-pipe-type" placeholder="Pipe Type (e.g. MS Pipe)" required class="w-full bg-gray-800 p-2 rounded border border-gray-600">
-                            <input type="text" id="new-diameter" placeholder="Diameter (e.g. 10 inch)" required class="w-full bg-gray-800 p-2 rounded border border-gray-600">
-                            <input type="number" id="new-opening" placeholder="Opening Balance" required class="w-full bg-gray-800 p-2 rounded border border-gray-600">
-                            <div class="flex justify-end space-x-2 mt-4">
-                                <button type="button" onclick="document.getElementById('app-container').children[0].remove()" class="px-4 py-2 bg-gray-700 rounded">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-blue-600 rounded">Save</button>
-                            </div>
-                        </form>
-                    </div>
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>DPR Reports</h2><p>${isAdmin?'All submitted daily progress reports':'Your submitted DPR reports'}</p></div>
+      <div class="page-actions">
+        <button class="btn btn-ghost btn-sm" onclick="exportDprExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search DPRs..." id="dprSearch" oninput="filterDprTable()"/></div>
+        <select class="form-control" style="width:auto" id="dprStatusFilter" onchange="filterDprTable()">
+          <option value="">All Status</option>
+          <option>Ongoing</option><option>Completed</option><option>Pending</option>
+        </select>
+        <input type="date" id="dprDateFilter" class="form-control" style="width:auto" onchange="filterDprTable()">
+      </div>
+      <div class="table-wrap">
+        ${dprs.length===0?`<div class="empty-state"><i class="fas fa-file-lines"></i><h4>No DPR reports</h4><p>No reports have been submitted yet</p></div>`:
+        `<table>
+          <thead><tr>
+            <th>#</th><th>Date</th><th>Engineer</th><th>Location</th>
+            <th>Pipe Type</th><th>Dia (mm)</th><th>Pipes Used</th>
+            <th>Length (m)</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="dprTbody">
+            ${dprs.map((d,i)=>`
+            <tr data-status="${d.status||''}" data-date="${d.date||''}">
+              <td class="text-muted small">${i+1}</td>
+              <td>${fmtDate(d.date)}</td>
+              <td><strong>${d.engineer||'-'}</strong></td>
+              <td>${d.location||'-'}</td>
+              <td>${d.pipeType||'-'}</td>
+              <td>${d.diameter||'-'}</td>
+              <td class="text-accent fw-600">${d.pipesUsed||0}</td>
+              <td>${d.length||0} m</td>
+              <td>${statusBadge(d.status)}</td>
+              <td>
+                <div class="flex gap-8">
+                  <button class="btn btn-ghost btn-xs" onclick="viewDpr('${d.id}')"><i class="fas fa-eye"></i></button>
+                  ${(isAdmin||d.submittedBy===currentUser.id)?`<button class="btn btn-ghost btn-xs" onclick="openDprModal('${d.id}')"><i class="fas fa-pen"></i></button>`:''}
+                  ${isAdmin?`<button class="btn btn-danger btn-xs" onclick="deleteRecord('dprs','${d.id}','Delete this DPR report?')"><i class="fas fa-trash"></i></button>`:''}
                 </div>
-                `;
-                const div = document.createElement('div');
-                div.innerHTML = html;
-                document.getElementById('app-container').appendChild(div.firstElementChild);
-                
-                document.getElementById('add-inv-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const item = {
-                        pipe_type: document.getElementById('new-pipe-type').value,
-                        diameter: document.getElementById('new-diameter').value,
-                        opening: parseFloat(document.getElementById('new-opening').value)
-                    };
-                    // Add logic here (Mock or Supabase)
-                    alert("Inventory Added (Mock Mode)");
-                    this.loadData().then(() => this.renderInventory());
-                });
-            },
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `;
+}
 
-            showAssignModal: function() {
-                 // Similar simplified modal for assignment
-                 alert("Assignment Modal: Select Engineer, Select Inventory, Enter Qty. (Implemented in full logic)");
-            }
-        };
+function renderDprTable(dprs){
+  if(!dprs.length) return `<div class="empty-state"><i class="fas fa-file-lines"></i><h4>No DPRs yet</h4></div>`;
+  return `<table>
+    <thead><tr><th>Date</th><th>Location</th><th>Pipe Type</th><th>Pipes Used</th><th>Status</th></tr></thead>
+    <tbody>
+      ${dprs.map(d=>`<tr>
+        <td>${fmtDate(d.date)}</td><td>${d.location||'-'}</td>
+        <td>${d.pipeType||'-'}</td><td>${d.pipesUsed||0}</td>
+        <td>${statusBadge(d.status)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
 
-        // Start App
-        window.onload = () => app.init();
+function filterDprTable(){
+  const q=document.getElementById('dprSearch')?.value.toLowerCase()||'';
+  const sf=document.getElementById('dprStatusFilter')?.value||'';
+  const df=document.getElementById('dprDateFilter')?.value||'';
+  document.querySelectorAll('#dprTbody tr').forEach(row=>{
+    const t=row.textContent.toLowerCase();
+    const s=row.dataset.status||'';
+    const d=row.dataset.date||'';
+    row.style.display=(t.includes(q)&&(!sf||s===sf)&&(!df||d===df))?'':'none';
+  });
+}
 
-    </script>
+function viewDpr(id){
+  const d=Store.dprs.find(x=>x.id===id);
+  if(!d) return;
+  const cf=Store.customFields.filter(f=>f.module==='dpr'||f.module==='both');
+  document.getElementById('dprViewBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      ${field('Date',fmtDate(d.date))}
+      ${field('Engineer',d.engineer)}
+      ${field('Location',d.location)}
+      ${field('Contractor',d.contractor)}
+      ${field('Pipe Type',d.pipeType)}
+      ${field('Diameter','Ø'+d.diameter+' mm')}
+      ${field('Pipes Used',d.pipesUsed)}
+      ${field('Length Installed',d.length+' m')}
+      ${field('Start Point',d.startPt)}
+      ${field('End Point',d.endPt)}
+      ${field('Depth',d.depth+' m')}
+      ${field('Work Status',statusBadge(d.status))}
+      ${field('Soil Type',d.soil||'-')}
+      ${field('Weather',d.weather||'-')}
+      ${cf.map(f=>field(f.label,d['cf_'+f.id]||'-')).join('')}
+    </div>
+    ${d.remarks?`<div class="separator"></div><div class="form-group"><label class="fw-700 text-muted small">REMARKS</label><p style="color:var(--txt);margin-top:4px">${d.remarks}</p></div>`:''}
+    <div class="separator"></div>
+    <div class="small text-muted">Submitted by: ${d.submittedBy} · ${d.submittedAt?new Date(d.submittedAt).toLocaleString('en-IN'):'-'}</div>
+  `;
+  openModal('modalViewDpr');
+}
+
+function field(label,value){
+  return `<div class="form-group mb-0">
+    <div class="small fw-600 text-muted" style="text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px">${label}</div>
+    <div style="color:var(--txt);font-size:14px">${value||'-'}</div>
+  </div>`;
+}
+
+function statusBadge(s){
+  const m={Completed:'success',Ongoing:'info',Pending:'warning'};
+  return `<span class="badge badge-${m[s]||'neutral'}">${s||'-'}</span>`;
+}
+
+/* ═══════════════ CUSTOM FIELDS ═══════════════ */
+function renderCustomFields(){
+  const el=document.getElementById('pageCustomFields');
+  const cfs=Store.customFields;
+
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>Custom Fields</h2><p>Manage dynamic fields for Inventory and DPR modules</p></div>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openCustomFieldModal()"><i class="fas fa-plus"></i> Add Field</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="cfTabSwitch(this,'all')">All Fields (${cfs.length})</div>
+      <div class="tab" onclick="cfTabSwitch(this,'inventory')">Inventory (${cfs.filter(f=>f.module==='inventory'||f.module==='both').length})</div>
+      <div class="tab" onclick="cfTabSwitch(this,'dpr')">DPR (${cfs.filter(f=>f.module==='dpr'||f.module==='both').length})</div>
+    </div>
+    <div id="cfList">
+      ${cfs.length===0?`<div class="empty-state"><i class="fas fa-sliders"></i><h4>No custom fields</h4><p>Add dynamic fields that appear in Inventory and DPR forms</p></div>`:
+      cfs.map(f=>`
+        <div class="field-item" data-module="${f.module}">
+          <div class="field-icon"><i class="fas ${fieldTypeIcon(f.type)}"></i></div>
+          <div class="field-info">
+            <strong>${f.label}</strong>
+            <span>${f.type} · ${f.module} · ${f.required==='1'?'Required':'Optional'}</span>
+          </div>
+          <div class="field-actions">
+            <button class="btn btn-ghost btn-xs" onclick="openCustomFieldModal('${f.id}')"><i class="fas fa-pen"></i> Edit</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteRecord('customFields','${f.id}','Delete this custom field?')"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function cfTabSwitch(el,mod){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.field-item').forEach(fi=>{
+    const m=fi.dataset.module;
+    fi.style.display=(mod==='all'||m===mod||m==='both')?'':'none';
+  });
+}
+
+function fieldTypeIcon(t){
+  const m={text:'fa-font',number:'fa-hashtag',date:'fa-calendar',select:'fa-list',textarea:'fa-align-left'};
+  return m[t]||'fa-font';
+}
+
+function openCustomFieldModal(id=null){
+  editingId=id;
+  document.getElementById('cfModalTitle').textContent=id?'Edit Custom Field':'Add Custom Field';
+  const ts=document.getElementById('cfType');
+  ts.onchange=()=>{
+    document.getElementById('cfOptionsGroup').style.display=ts.value==='select'?'block':'none';
+  };
+  if(id){
+    const f=Store.customFields.find(x=>x.id===id);
+    if(f){
+      document.getElementById('cfLabel').value=f.label||'';
+      document.getElementById('cfType').value=f.type||'text';
+      document.getElementById('cfModule').value=f.module||'inventory';
+      document.getElementById('cfOptions').value=f.options||'';
+      document.getElementById('cfRequired').value=f.required||'0';
+      document.getElementById('cfOptionsGroup').style.display=f.type==='select'?'block':'none';
+    }
+  } else {
+    document.getElementById('cfLabel').value='';
+    document.getElementById('cfType').value='text';
+    document.getElementById('cfModule').value='inventory';
+    document.getElementById('cfOptions').value='';
+    document.getElementById('cfRequired').value='0';
+    document.getElementById('cfOptionsGroup').style.display='none';
+  }
+  document.getElementById('cfEditId').value=id||'';
+  openModal('modalCustomField');
+}
+
+function saveCustomField(){
+  const label=document.getElementById('cfLabel').value.trim();
+  const type=document.getElementById('cfType').value;
+  const module=document.getElementById('cfModule').value;
+  if(!label){toast('danger','Field label is required');return}
+  const cfs=Store.customFields;
+  const obj={label,type,module,options:document.getElementById('cfOptions').value,required:document.getElementById('cfRequired').value};
+  if(editingId){
+    const idx=cfs.findIndex(f=>f.id===editingId);
+    if(idx>-1) cfs[idx]={...cfs[idx],...obj};
+  } else {
+    cfs.push({id:uid(),...obj});
+  }
+  Store.customFields=cfs;
+  if(db) cfs.forEach(f=>fbSave('customFields',f));
+  closeModal('modalCustomField');
+  renderPage('customFields');
+  toast('success',editingId?'Field updated':'Custom field added');
+  editingId=null;
+}
+
+function customFieldInput(f,prefix){
+  const id=prefix+f.id;
+  let input='';
+  if(f.type==='select'){
+    const opts=(f.options||'').split(',').map(o=>o.trim()).filter(Boolean);
+    input=`<select id="${id}" class="form-control">${f.required!=='1'?'<option value="">Select...</option>':''}${opts.map(o=>`<option>${o}</option>`).join('')}</select>`;
+  } else if(f.type==='textarea'){
+    input=`<textarea id="${id}" class="form-control" rows="2" placeholder="${f.label}"></textarea>`;
+  } else {
+    input=`<input type="${f.type}" id="${id}" class="form-control" placeholder="${f.label}">`;
+  }
+  return `<div class="form-group"><label>${f.label}${f.required==='1'?' *':''}</label>${input}</div>`;
+}
+
+/* ═══════════════ ENGINEERS ═══════════════ */
+function renderEngineers(){
+  const el=document.getElementById('pageEngineers');
+  const engs=Store.engineers;
+  const dprs=Store.dprs;
+
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>Engineers</h2><p>Manage site engineers and assignments</p></div>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openEngineerModal()"><i class="fas fa-plus"></i> Add Engineer</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        ${engs.length===0?`<div class="empty-state"><i class="fas fa-hard-hat"></i><h4>No engineers added</h4><p>Add engineers to assign work and track DPRs</p></div>`:`
+        <table>
+          <thead><tr>
+            <th>#</th><th>Name</th><th>Emp ID</th><th>Designation</th>
+            <th>Phone</th><th>Zone</th><th>DPRs Submitted</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${engs.map((e,i)=>`<tr>
+              <td class="text-muted small">${i+1}</td>
+              <td><strong>${e.name||'-'}</strong></td>
+              <td class="text-muted">${e.empId||'-'}</td>
+              <td>${e.designation||'-'}</td>
+              <td>${e.phone||'-'}</td>
+              <td><span class="badge badge-primary">${e.zone||'-'}</span></td>
+              <td class="text-accent fw-600">${dprs.filter(d=>d.engineer===e.name).length}</td>
+              <td>
+                <div class="flex gap-8">
+                  <button class="btn btn-ghost btn-xs" onclick="openEngineerModal('${e.id}')"><i class="fas fa-pen"></i></button>
+                  <button class="btn btn-danger btn-xs" onclick="deleteRecord('engineers','${e.id}','Delete this engineer?')"><i class="fas fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `;
+}
+
+function openEngineerModal(id=null){
+  editingId=id;
+  document.getElementById('engModalTitle').textContent=id?'Edit Engineer':'Add Engineer';
+  if(id){
+    const e=Store.engineers.find(x=>x.id===id);
+    if(e){
+      document.getElementById('engName').value=e.name||'';
+      document.getElementById('engEmpId').value=e.empId||'';
+      document.getElementById('engDesig').value=e.designation||'';
+      document.getElementById('engPhone').value=e.phone||'';
+      document.getElementById('engZone').value=e.zone||'';
+      document.getElementById('engNotes').value=e.notes||'';
+    }
+  } else {
+    ['engName','engEmpId','engDesig','engPhone','engZone','engNotes'].forEach(i=>{
+      const e=document.getElementById(i); if(e) e.value='';
+    });
+  }
+  document.getElementById('engEditId').value=id||'';
+  openModal('modalEngineer');
+}
+
+function saveEngineer(){
+  const name=document.getElementById('engName').value.trim();
+  if(!name){toast('danger','Engineer name is required');return}
+  const engs=Store.engineers;
+  const obj={
+    name,
+    empId:document.getElementById('engEmpId').value,
+    designation:document.getElementById('engDesig').value,
+    phone:document.getElementById('engPhone').value,
+    zone:document.getElementById('engZone').value,
+    notes:document.getElementById('engNotes').value,
+    updatedAt:new Date().toISOString()
+  };
+  if(editingId){
+    const idx=engs.findIndex(e=>e.id===editingId);
+    if(idx>-1) engs[idx]={...engs[idx],...obj};
+  } else {
+    engs.push({id:uid(),...obj,createdAt:new Date().toISOString()});
+  }
+  Store.engineers=engs;
+  if(db) engs.forEach(e=>fbSave('engineers',e));
+  closeModal('modalEngineer');
+  renderPage('engineers');
+  toast('success',editingId?'Engineer updated':'Engineer added');
+  editingId=null;
+}
+
+/* ═══════════════ REPORTS & EXPORT ═══════════════ */
+function renderReports(){
+  const el=document.getElementById('pageReports');
+  el.innerHTML=`
+    <div class="page-header">
+      <div class="page-title"><h2>Export Reports</h2><p>Download reports as Excel spreadsheets</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-right:8px"></i>Inventory Report</h3></div>
+        <div class="card-body">
+          <p class="text-muted small mb-16">Export complete pipe inventory with stock levels, source, and custom fields.</p>
+          <div class="flex gap-8">
+            <button class="btn btn-primary" onclick="exportInventoryExcel()"><i class="fas fa-file-excel"></i> Download Excel</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-clipboard-list" style="color:var(--accent);margin-right:8px"></i>DPR Report</h3></div>
+        <div class="card-body">
+          <p class="text-muted small mb-16">Export all daily progress reports with engineer details and pipe usage.</p>
+          <div class="flex gap-8">
+            <button class="btn btn-accent" onclick="exportDprExcel()"><i class="fas fa-file-excel"></i> Download Excel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <div class="card-header"><h3><i class="fas fa-chart-line" style="color:var(--success);margin-right:8px"></i>Summary Report</h3></div>
+      <div class="card-body">
+        ${renderSummaryStats()}
+      </div>
+    </div>
+  `;
+}
+
+function renderSummaryStats(){
+  const inv=Store.inventory;
+  const dprs=Store.dprs;
+  const total=inv.reduce((s,i)=>s+fmtNum(i.qty),0);
+  const used=dprs.reduce((s,d)=>s+fmtNum(d.pipesUsed),0);
+  const totalLen=dprs.reduce((s,d)=>s+fmtNum(d.length),0);
+  return `
+    <div class="stats-grid" style="margin-bottom:0">
+      <div class="stat-card" style="--c1:var(--primary)">
+        <div class="label">Total Stock Added</div><div class="value">${total}</div>
+      </div>
+      <div class="stat-card" style="--c1:var(--accent)">
+        <div class="label">Total Pipes Used</div><div class="value">${used}</div>
+      </div>
+      <div class="stat-card" style="--c1:var(--success)">
+        <div class="label">Remaining Stock</div><div class="value">${Math.max(0,total-used)}</div>
+      </div>
+      <div class="stat-card" style="--c1:var(--info)">
+        <div class="label">Total Length Laid</div><div class="value">${totalLen.toFixed(0)}<span style="font-size:16px;font-weight:400"> m</span></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════ EXCEL EXPORT ═══════════════ */
+function exportInventoryExcel(){
+  const inv=Store.inventory;
+  const dprs=Store.dprs;
+  const cf=Store.customFields.filter(f=>f.module==='inventory'||f.module==='both');
+  const getUsed=(pt,d)=>dprs.filter(x=>x.pipeType===pt&&String(x.diameter)===String(d)).reduce((s,x)=>s+fmtNum(x.pipesUsed),0);
+
+  const rows=inv.map((item,i)=>{
+    const used=getUsed(item.pipeType,item.diameter);
+    const obj={
+      '#':i+1,'Pipe Type':item.pipeType||'','Diameter (mm)':item.diameter||'',
+      'Total Qty':item.qty||0,'Used':used,'Available':Math.max(0,fmtNum(item.qty)-used),
+      'Source':item.source||'','Grade':item.grade||'',
+      'Pipe Length (m)':item.pipeLength||'',
+      'Location':item.location||'','Notes':item.notes||'',
+      'Entry Date':item.entryDate?new Date(item.entryDate).toLocaleDateString('en-IN'):''
+    };
+    cf.forEach(f=>obj[f.label]=item['cf_'+f.id]||'');
+    return obj;
+  });
+
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Inventory');
+  XLSX.writeFile(wb,`Pipe_Inventory_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('success','Inventory report downloaded!');
+}
+
+function exportDprExcel(){
+  const dprs=Store.dprs.slice().reverse();
+  const cf=Store.customFields.filter(f=>f.module==='dpr'||f.module==='both');
+  const rows=dprs.map((d,i)=>{
+    const obj={
+      '#':i+1,'Date':d.date||'','Engineer':d.engineer||'','Location':d.location||'',
+      'Contractor':d.contractor||'','Pipe Type':d.pipeType||'','Diameter (mm)':d.diameter||'',
+      'Pipes Used':d.pipesUsed||0,'Length Installed (m)':d.length||0,
+      'Start Point':d.startPt||'','End Point':d.endPt||'','Depth (m)':d.depth||'',
+      'Work Status':d.status||'','Soil Type':d.soil||'','Weather':d.weather||'',
+      'Remarks':d.remarks||'','Submitted By':d.submittedBy||'',
+      'Submitted At':d.submittedAt?new Date(d.submittedAt).toLocaleString('en-IN'):''
+    };
+    cf.forEach(f=>obj[f.label]=d['cf_'+f.id]||'');
+    return obj;
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'DPR Reports');
+  XLSX.writeFile(wb,`Pipe_DPR_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('success','DPR report downloaded!');
+}
+
+/* ═══════════════ DELETE ═══════════════ */
+function deleteRecord(collection,id,msg='Are you sure?'){
+  document.getElementById('confirmMsg').textContent=msg;
+  confirmCallback=()=>{
+    const arr=Store[collection];
+    Store[collection]=arr.filter(x=>x.id!==id);
+    if(db) fbDelete(collection,id);
+    closeModal('modalConfirm');
+    renderCurrentPage();
+    toast('success','Deleted successfully');
+  };
+  document.getElementById('confirmOkBtn').onclick=confirmCallback;
+  openModal('modalConfirm');
+}
+
+/* ═══════════════ MODAL HELPERS ═══════════════ */
+function openModal(id){ document.getElementById(id).classList.add('open') }
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{ if(e.target===ov) closeModal(ov.id) });
+});
+
+/* ═══════════════ TOAST ═══════════════ */
+function toast(type,msg,duration=3500){
+  const icons={success:'fa-circle-check',danger:'fa-circle-exclamation',warning:'fa-triangle-exclamation',info:'fa-circle-info'};
+  const div=document.createElement('div');
+  div.className=`toast toast-${type}`;
+  div.innerHTML=`<i class="fas ${icons[type]||icons.info} toast-icon"></i><span class="toast-msg">${msg}</span><i class="fas fa-times toast-close" onclick="this.parentElement.remove()"></i>`;
+  document.getElementById('toastContainer').appendChild(div);
+  setTimeout(()=>{ div.classList.add('hide'); setTimeout(()=>div.remove(),300) }, duration);
+}
+
+/* ═══════════════ INIT ═══════════════ */
+checkSession();
+</script>
 </body>
 </html>
